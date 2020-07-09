@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>backupConfigDataUpdate</title>
+    <script src="../../../js/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+    <div>
+        <div>
+            <span>备份和命令</span> <br />
+            <span>编号</span><input id="id" name="id" th:value="${backupConfigDataVo.id}" /> <br />
+            <span>系统编号</span><input id="backupConfigId" name="backupConfigId" th:value="${backupConfigDataVo.backupConfigId}" /> <br />
+            <span>脚本名</span><input id="filename" name="filename" th:value="${backupConfigDataVo.filename}" /> <br />
+            <span>Cron表达式</span><input id="cronExpr" name="cronExpr" th:value="${backupConfigDataVo.cronExpr}" /> <br />
+            <span>命令</span> <br/>
+            <textarea id = "shellCommands" name="shellCommands" th:text="${backupConfigDataVo.shellCommands}"></textarea><br/>
+            <span>备份路径</span> <button name="addDir">+</button><button name="delDir">-</button><br/>
+            <div th:each="backupPath : ${backupConfigDataVo.backupPaths}">
+                <input name="backupPath" th:value="${backupPath}" />
+            </div>
+        </div>
+    </div>
+    <div>
+        <button onclick=javascrtpt:jump('../../../index')>主页</button>
+        <button onclick=updateBackupConfigData()>更新</button>
+        <button onclick=queryBackupConfigData()>返回</button>
+    </div>
+</body>
+<script type="text/javascript">
+    function queryBackupConfigData() {
+        window.location.href = "/backup/data/" + $("#backupConfigId").val();
+    }
+    function jump(pageName){
+        window.location.href = pageName + ".html";
+    }
+
+    function updateBackupConfigData() {
+
+        var backupPathObj = $('[name="backupPath"]');
+        var backupPathLength = backupPathObj.length;
+        var backupPaths = [];
+        for (var i = 0; i < backupPathLength; i++) {
+            backupPaths[i] = backupPathObj.eq(i).val();
+        }
+
+        var data = {
+            "backupConfigId" : $("#backupConfigId").val(),
+            "filename" : $("#filename").val(),
+            "cronExpr" : $("#cronExpr").val(),
+            "shellCommands" : $("#shellCommands").val(),
+            "backupPaths" : backupPaths
+        };
+        /*alert(JSON.stringify(data))*/
+
+        $.ajax({
+            type : 'PUT',
+            url : '/backup/data/' + $("#id").val(),
+            dataType : "json",
+            contentType : 'application/json',
+            async : false,
+            data : JSON.stringify(data),
+            success : function (result) {
+                /*var res = JSON.parse(result);*/
+                if (result.result === "success") {
+                    window.location.href = "/backup/data/" + result.data;
+                }
+            }
+        })
+    }
+
+    $('[name="addDir"]').bind("click", function () {
+        $('[name="addDir"]').parent().append("<div><input name='backupPath' /></div>");
+        return false;
+    });
+    $('[name="delDir"]').bind("click", function () {
+        var dirPathLength = $('[name="backupPath"]').length;
+        if (dirPathLength > 1) {
+            $('[name="delDir"]').parent().children("div:last").remove();
+        }
+        return false;
+    });
+</script>
+</html>

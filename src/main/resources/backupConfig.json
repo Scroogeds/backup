@@ -1,0 +1,18 @@
+[
+  {
+    "id" : "MC123456",
+    "sysType" : "1",
+    "address" : "127.0.0.1",
+    "username" : "root",
+    "password" : "123456",
+    "connectType" : "1"
+  },
+  {
+    "id" : "MC123455",
+    "sysType" : "2",
+    "address" : "127.0.0.1",
+    "username" : "root",
+    "password" : "12345678",
+    "connectType" : "2"
+  }
+]

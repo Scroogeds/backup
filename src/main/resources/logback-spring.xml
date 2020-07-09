@@ -8,7 +8,7 @@
     <springProperty scope="context" name="serverPort" source="server.port" defaultValue="0"/>
 
     <!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径-->
-    <property name="log.path" value="/backup/log/${serviceName}" />
+    <property name="log.path" value="/Users/luyangqian/wpcloud/log/${serviceName}" />
     <property name="filePrefix" value="${serviceName}-${serverPort}" />
 
     <contextName>${applicationName}</contextName>

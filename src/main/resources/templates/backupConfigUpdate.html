@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>backupConfigDataUpdate</title>
+    <script src="../../js/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+    <div>
+        <div>
+            <span>系统资源</span> <br />
+            <span>编号</span><input id="id" name="id" th:value="${backupConfig.id}" /> <br />
+            <span>系统</span><input id="sysType" name="sysType" th:value="${backupConfig.sysType}" /> <br />
+            <span>服务器地址</span><input id="address" name="address" th:value="${backupConfig.address}" /> <br />
+            <span>账号</span><input id="username" name="username" th:value="${backupConfig.username}" /> <br />
+            <span>密码</span><input id="password" name="password" th:value="${backupConfig.password}" /> <br />
+            <span>连接方式</span><input id="connectType" name="connectType" th:value="${backupConfig.connectType}" /> <br />
+        </div>
+    </div>
+    <div>
+        <button onclick=javascrtpt:jump('../../index')>主页</button>
+        <button onclick=updateBackup()>更新</button>
+        <button onclick=queryBackup()>返回</button>
+    </div>
+</body>
+<script type="text/javascript">
+    function queryBackup() {
+        window.location.href = "/backup/config";
+    }
+    function jump(pageName){
+        window.location.href = pageName + ".html";
+    }
+
+    function updateBackup() {
+        var data = {
+            "sysType" : $("#sysType").val(),
+            "address" : $("#address").val(),
+            "username" : $("#username").val(),
+            "password" : $("#password").val(),
+            "connectType" : $("#connectType").val()
+        };
+        /*alert(JSON.stringify(data))*/
+
+        $.ajax({
+            type : 'PUT',
+            url : '/backup/config/' + $("#id").val(),
+            dataType : "json",
+            contentType : 'application/json',
+            async : false,
+            data : JSON.stringify(data),
+            success : function (result) {
+                alert(result)
+                if (result === "success") {
+                    window.location.href = "/backup/config";
+                }
+            },
+            error : function () {
+                window.location.href = "/backup/config";
+            }
+        })
+    }
+</script>
+</html>

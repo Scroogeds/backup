@@ -2,9 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>gmp-backup</title>
 </head>
+
+<script type="text/javascript">
+    function jump(pageName){
+        window.location.href = pageName + ".html";
+    }
+    function queryBackup() {
+        window.location.href = "/backup/config";
+    }
+</script>
+
 <body>
-    hello
+    <div style="text-align: center"><h1>gmp-backup</h1></div>
+    <div><button onclick=javascrtpt:jump('addBackupConfig')>新增备份</button></div>
+    <div><button onclick=javascrtpt:jump('recover')>恢复数据</button></div>
+    <div><button onclick=queryBackup()>查看备份</button></div>
 </body>
 </html>

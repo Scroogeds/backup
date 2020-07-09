@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>backup</title>
+    <script src="../../js/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+    <div>
+        <button onclick=javascrtpt:addBackupConfigData()>新增</button>
+    </div>
+    <span hidden id="backupConfigId" th:text="${backupConfigId}"></span>
+    <div th:if="not ${#lists.isEmpty(backupConfigDatas)}">
+        <table border="1" cellspacing="0" cellpadding="0">
+            <tr>
+                <td>Cron表达式</td>
+                <td>文件名</td>
+                <td>编号</td>
+                <td>
+                    操作
+                </td>
+            </tr>
+            <tr th:each="backupConfigData : ${backupConfigDatas}">
+                <td th:text="${backupConfigData.cronExpr}"></td>
+                <td th:text="${backupConfigData.filename}"></td>
+                <td th:text="${backupConfigData.id}"></td>
+                <td>
+                    <button th:onclick = "javascript:queryBackupConfigDataById([[${backupConfigData.id}]])">修改</button>
+                    <button th:onclick = "javascript:deleteBackupConfigDataById([[${backupConfigData.id}]])">删除</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div th:if="${#lists.isEmpty(backupConfigDatas)}">
+        <h4>没有数据</h4>
+    </div>
+    <div>
+        <button onclick=javascrtpt:jump('../../index')>主页</button>
+        <button onclick=javascrtpt:queryBackup()>返回</button>
+    </div>
+</body>
+<script type="text/javascript">
+
+    function queryBackup() {
+        window.location.href = "/backup/config";
+    }
+
+    function queryBackupConfigDataById(id){
+        /*alert($("#id").text())*/
+        window.location.href = "/backup/data/detail/" + id;
+    }
+
+    function deleteBackupConfigDataById(id) {
+        $.ajax({
+            type : 'DELETE',
+            url : '/backup/data/' + id,
+            success : function (result) {
+                if (result === "success") {
+                    window.location.href = "/backup/data";
+                }
+            }
+        })
+    }
+    function jump(pageName){
+        window.location.href = pageName + ".html";
+    }
+    function addBackupConfigData(){
+        window.location.href = "../../addBackupConfigData.html?backupConfigId=" + $("#backupConfigId").text();
+    }
+</script>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>addBackupConfigData</title>
+    <script src="../../js/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div>
+    <form action="/backup/data" method="post">
+        <div>
+            <span>系统编号</span><input id="backupConfigId" name="backupConfigId" /> <br />
+            <span>脚本名</span><input id="filename" name="filename" /> <br />
+            <span>Cron表达式</span><input id="cronExpr" name="cronExpr" /> <br />
+            <span>命令</span><br/>
+            <textarea name="shellCommands"></textarea><br />
+            <span>备份路径</span>
+            <button name="addDir">+</button><button name="delDir">-</button><br/>
+            <div>
+                <input name="backupPath" />
+            </div>
+        </div>
+        <div>
+            <input type="submit" />
+        </div>
+    </form>
+</div>
+</body>
+<script type="text/javascript">
+    $(function(){
+        var url = window.location.search; //获取url中"?"符后的字串
+        var result;
+        if(url.indexOf("?") !== -1){
+            result = url.substr(url.indexOf("=")+1);
+        }
+        $("#backupConfigId").val(result);
+    });
+
+    $('[name="addDir"]').bind("click", function () {
+        $('[name="addDir"]').parent().append("<div><input name='backupPath' /></div>");
+        return false;
+    });
+    $('[name="delDir"]').bind("click", function () {
+        var dirPathLength = $('[name="backupPath"]').length;
+        if (dirPathLength > 1) {
+            $('[name="delDir"]').parent().children("div:last").remove();
+        }
+        return false;
+    });
+</script>
+</html>

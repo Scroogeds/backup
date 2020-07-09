@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>addBackupConfig</title>
+</head>
+<body>
+<div>
+    <!--<form action="/content/recover" method="post" onsubmit="return backDataSubmit()">-->
+    <!--" 'javascript:queryBackupConfigById(\''+ ${backupConfigStat.index} +'\');' "-->
+    <form action="/backup/config" method="post">
+        <div>
+            <span>系统</span><input id="sysType" name="sysType" /> <br />
+            <span>服务器地址</span><input id="address" name="address" /> <br />
+            <span>账号</span><input id="username" name="username" /> <br />
+            <span>密码</span><input id="password" name="password" /> <br />
+            <span>连接方式</span><input id="connectType" name="connectType" /> <br />
+        </div>
+        <div>
+            <input type="submit" />
+        </div>
+    </form>
+</div>
+</body>
+</html>

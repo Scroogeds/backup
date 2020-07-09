@@ -1,5 +1,6 @@
 package com.leateck.gmp;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -16,6 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *          2020-06-28   luyangqian  Created
  * </pre>
  */
+@MapperScan("com.leateck.gmp.backup.mapper")
 @SpringBootApplication
 public class BackupApplication {
 
