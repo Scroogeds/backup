@@ -32,7 +32,7 @@ public interface IBackupConfigService {
 
     void saveH2DataBase();
 
-    String executeShellFile(String backupConfigDataId);
+    String buildShellFile(String backupConfigDataId);
 
     String executeShell(String backupConfigDataId);
 }

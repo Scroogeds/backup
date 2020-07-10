@@ -8,6 +8,7 @@ import com.leateck.gmp.backup.vo.BackupConfigDataVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -50,6 +51,10 @@ public class BackupConfigDataService implements IBackupConfigDataService {
         BeanUtils.copyProperties(backupConfigDataVo, backupConfigData);
         backupConfigData.setBackupPaths(String.join(",", backupConfigDataVo.getBackupPaths()));
         backupConfigData.setTargetPaths(String.join(",", backupConfigDataVo.getTargetPaths()));
+        String backupFilename = backupConfigData.getBackupFilename();
+        if (StringUtils.isEmpty(backupFilename)) {
+            backupConfigData.setBackupFilename("gmp-backup");
+        }
         return backupConfigDataMapper.modifyDataById(backupConfigData);
     }
 

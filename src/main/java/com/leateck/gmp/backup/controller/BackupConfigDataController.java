@@ -7,6 +7,7 @@ import com.leateck.gmp.backup.vo.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,14 +52,18 @@ public class BackupConfigDataController {
         String backupConfigId = request.getParameter("backupConfigId");
         String cronExpr = request.getParameter("cronExpr");
         String filename = request.getParameter("filename");
+        String backupFilename = request.getParameter("backupFilename");
         String shellCommands = request.getParameter("shellCommands");
         String[] backupPaths = request.getParameterValues("backupPath");
         String[] targetPaths = request.getParameterValues("targetPath");
+
+        backupFilename = StringUtils.isEmpty(backupFilename) ? "gmp-backup" : backupFilename;
 
         BackupConfigData backupConfigData = new BackupConfigData();
         backupConfigData.setBackupConfigId(backupConfigId);
         backupConfigData.setCronExpr(cronExpr);
         backupConfigData.setFilename(filename);
+        backupConfigData.setBackupFilename(backupFilename);
         backupConfigData.setShellCommands(shellCommands);
         backupConfigData.setBackupPaths(String.join(",", backupPaths));
         backupConfigData.setTargetPaths(String.join(",", targetPaths));

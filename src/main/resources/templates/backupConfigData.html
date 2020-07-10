@@ -14,7 +14,8 @@
         <table border="1" cellspacing="0" cellpadding="0">
             <tr>
                 <td>Cron表达式</td>
-                <td>文件名</td>
+                <td>脚本文件名</td>
+                <td>备份文件名</td>
                 <td>编号</td>
                 <td>
                     操作
@@ -23,6 +24,8 @@
             <tr th:each="backupConfigData : ${backupConfigDatas}">
                 <td th:text="${backupConfigData.cronExpr}"></td>
                 <td th:text="${backupConfigData.filename}"></td>
+                <td th:text="${backupConfigData.backupFilename}"></td>
+                <!--<td th:text="${backupConfigData.saveDayNum}"></td>-->
                 <td th:text="${backupConfigData.id}"></td>
                 <td>
                     <button th:onclick = "javascript:queryBackupConfigDataById([[${backupConfigData.id}]])">修改</button>

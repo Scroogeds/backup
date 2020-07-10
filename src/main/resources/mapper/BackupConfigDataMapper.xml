@@ -10,6 +10,8 @@
         <result column="cron_expr" jdbcType="VARCHAR" property="cronExpr" />
         <result column="filename" jdbcType="VARCHAR" property="filename" />
         <result column="target_paths" jdbcType="VARCHAR" property="targetPaths" />
+        <result column="backup_filename" jdbcType="VARCHAR" property="backupFilename" />
+        <result column="save_day_num" jdbcType="INTEGER" property="saveDayNum" />
     </resultMap>
 
     <!--<select id="queryAll" resultMap="backupDataResultMap">
@@ -25,7 +27,7 @@
     </select>
 
     <insert id="insertData" parameterType="com.leateck.gmp.backup.entity.BackupConfigData">
-        insert into backup_config_data(id, backup_config_id, shell_commands, backup_paths, cron_expr, filename, target_paths)
+        insert into backup_config_data(id, backup_config_id, shell_commands, backup_paths, cron_expr, filename, target_paths, backup_filename, save_day_num)
             values(
                 #{backupConfigData.id},
                 #{backupConfigData.backupConfigId},
@@ -33,7 +35,9 @@
                 #{backupConfigData.backupPaths},
                 #{backupConfigData.cronExpr},
                 #{backupConfigData.filename},
-                #{backupConfigData.targetPaths}
+                #{backupConfigData.targetPaths},
+                #{backupConfigData.backupFilename},
+                #{backupConfigData.saveDayNum}
             )
     </insert>
 
@@ -46,6 +50,8 @@
             <if test="backupConfigData.cronExpr!=null">cron_expr = #{backupConfigData.cronExpr},</if>
             <if test="backupConfigData.filename!=null">filename = #{backupConfigData.filename},</if>
             <if test="backupConfigData.targetPaths!=null">target_paths = #{backupConfigData.targetPaths},</if>
+            <if test="backupConfigData.backupFilename!=null">backup_filename = #{backupConfigData.backupFilename},</if>
+            <if test="backupConfigData.saveDayNum!=null">save_day_num = #{backupConfigData.saveDayNum},</if>
         </trim>
         where id = #{backupConfigData.id}
     </update>

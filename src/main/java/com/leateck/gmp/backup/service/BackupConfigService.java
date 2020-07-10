@@ -21,9 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -215,33 +213,75 @@ public class BackupConfigService implements IBackupConfigService {
     }
 
     @Override
-    public String executeShellFile(String backupConfigDataId) {
+    public String buildShellFile(String backupConfigDataId) {
         BackupConfigData backupConfigData = backupConfigDataMapper.queryById(backupConfigDataId);
-        /*if (null != backupConfigData) {
-            List<BackupConfigData> backupConfigData = backupConfigDataMapper.queryByBackupConfigId(id);
-            if (!CollectionUtils.isEmpty(backupConfigData)) {
+        if (null != backupConfigData) {
+            buildShellFile(backupConfigData,
+                    new File(getShellFilename(backupConfigData.getFilename(), backupConfigDataId)));
+        }
+        return "";
+    }
 
+    private String getShellFilename(String filename, String backupConfigDataId) {
+        String executeShell = null;
+        //String filename = backupConfigData.getFilename();
+        if (!StringUtils.isEmpty(filename)) {
+            executeShell = shellPath + filename;
+            if (!executeShell.endsWith(".sh")) {
+                executeShell = executeShell + ".sh";
             }
+        } else {
+            executeShell = shellPath + backupConfigDataId + ".sh";
+        }
+        return executeShell;
+    }
 
-        }*/
-        return null;
+    private void buildShellFile(BackupConfigData backupConfigData, File file) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)))){
+            bufferedWriter.write("#!/bin/bash");
+            bufferedWriter.newLine();
+            bufferedWriter.write("cd " + shellPath);
+            bufferedWriter.newLine();
+            bufferedWriter.write("tmpDate=$(date \"+%Y%m%d%H%M%S\")");
+            bufferedWriter.newLine();
+            String shellCommands = backupConfigData.getShellCommands();
+            if (!StringUtils.isEmpty(shellCommands)) {
+                bufferedWriter.write(shellCommands);
+                bufferedWriter.newLine();
+            }
+            String backupPaths = backupConfigData.getBackupPaths();
+            if (!StringUtils.isEmpty(backupPaths)) {
+                bufferedWriter.write("tar -zxvf " + backupConfigData.getBackupFilename() + "-$tmpDate.tar.gz " + backupPaths.replace(",", " "));
+                bufferedWriter.newLine();
+            }
+            BackupConfig backupConfig = backupConfigMapper.queryById(backupConfigData.getBackupConfigId());
+            String targetPaths = backupConfigData.getTargetPaths();
+            if (!StringUtils.isEmpty(targetPaths)) {
+                for (String targetPath : targetPaths.split(",")) {
+                    bufferedWriter.write("sshpass -p " + backupConfig.getPassword() +
+                            " scp " + backupConfig.getUsername() + "@" + backupConfig.getAddress() + ":" + targetPath);
+                    bufferedWriter.newLine();
+                }
+            }
+            bufferedWriter.newLine();
+            bufferedWriter.write("rm -rf " + backupConfigData.getBackupFilename() + "-$tmpDate.tar.gz");
+        } catch (Exception e) {
+            //
+        }
     }
 
     @Override
     public String executeShell(String backupConfigDataId) {
         BackupConfigData backupConfigData = backupConfigDataMapper.queryById(backupConfigDataId);
         if (null != backupConfigData) {
-            String executeShell = null;
-            String filename = backupConfigData.getFilename();
-            if (!StringUtils.isEmpty(filename)) {
-                executeShell = shellPath + filename;
-                if (!executeShell.endsWith(".sh")) {
-                    executeShell = executeShell + ".sh";
-                }
+            String executeShell = getShellFilename(backupConfigData.getFilename(), backupConfigDataId);
+            File file = new File(executeShell);
+            if (file.exists()) {
+                return RuntimeUtil.execForStr(executeShell);
             } else {
-                executeShell = shellPath + backupConfigDataId + ".sh";
+                buildShellFile(backupConfigData, file);
+                return RuntimeUtil.execForStr(executeShell);
             }
-            //return RuntimeUtil.execForLine(executeShell);
         }
         return "";
     }

@@ -14,19 +14,9 @@ import lombok.Data;
  * </pre>
  */
 @Data
-public class BackupConfigData {
-
-    private String id;
-
-    private String backupConfigId;
-
-    private String shellCommands;
+public class BackupConfigData extends BaseBackupConfigData {
 
     private String backupPaths;
-
-    private String cronExpr;
-
-    private String filename;
 
     private String targetPaths;
 
