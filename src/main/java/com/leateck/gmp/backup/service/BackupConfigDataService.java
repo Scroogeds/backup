@@ -49,6 +49,7 @@ public class BackupConfigDataService implements IBackupConfigDataService {
         BackupConfigData backupConfigData = new BackupConfigData();
         BeanUtils.copyProperties(backupConfigDataVo, backupConfigData);
         backupConfigData.setBackupPaths(String.join(",", backupConfigDataVo.getBackupPaths()));
+        backupConfigData.setTargetPaths(String.join(",", backupConfigDataVo.getTargetPaths()));
         return backupConfigDataMapper.modifyDataById(backupConfigData);
     }
 

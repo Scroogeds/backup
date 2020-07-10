@@ -1,6 +1,7 @@
 package com.leateck.gmp.backup.service;
 
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -10,7 +11,6 @@ import com.leateck.gmp.backup.entity.BackupConfigData;
 import com.leateck.gmp.backup.mapper.BackupConfigDataMapper;
 import com.leateck.gmp.backup.mapper.BackupConfigMapper;
 import com.leateck.gmp.backup.utils.StringUtil;
-import com.leateck.gmp.backup.vo.BackupConfigDataVo;
 import com.leateck.gmp.backup.vo.BackupConfigVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * <p>Title: BackupConfigService</p>
@@ -43,8 +41,12 @@ import java.util.stream.Stream;
 @Service
 public class BackupConfigService implements IBackupConfigService {
 
-    @Value("${gmp-backup.shellPath}")
     private String shellPath;
+
+    @Value("${gmp-backup.shellPath}")
+    public void setShellPath(String shellPath) {
+        this.shellPath = shellPath.endsWith(File.separator) ? shellPath : shellPath + File.separator;
+    }
 
     private BackupConfigMapper backupConfigMapper;
 
@@ -213,15 +215,34 @@ public class BackupConfigService implements IBackupConfigService {
     }
 
     @Override
-    public String executeShellFile(String id) {
-        BackupConfig backupConfig = backupConfigMapper.queryById(id);
-        if (null != backupConfig) {
+    public String executeShellFile(String backupConfigDataId) {
+        BackupConfigData backupConfigData = backupConfigDataMapper.queryById(backupConfigDataId);
+        /*if (null != backupConfigData) {
             List<BackupConfigData> backupConfigData = backupConfigDataMapper.queryByBackupConfigId(id);
             if (!CollectionUtils.isEmpty(backupConfigData)) {
 
             }
 
-        }
+        }*/
         return null;
+    }
+
+    @Override
+    public String executeShell(String backupConfigDataId) {
+        BackupConfigData backupConfigData = backupConfigDataMapper.queryById(backupConfigDataId);
+        if (null != backupConfigData) {
+            String executeShell = null;
+            String filename = backupConfigData.getFilename();
+            if (!StringUtils.isEmpty(filename)) {
+                executeShell = shellPath + filename;
+                if (!executeShell.endsWith(".sh")) {
+                    executeShell = executeShell + ".sh";
+                }
+            } else {
+                executeShell = shellPath + backupConfigDataId + ".sh";
+            }
+            //return RuntimeUtil.execForLine(executeShell);
+        }
+        return "";
     }
 }

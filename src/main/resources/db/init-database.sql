@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS backup_config_data (
     shell_commands TEXT,
     backup_paths TEXT,
     cron_expr VARCHAR(128),
-    filename VARCHAR(64)
+    filename VARCHAR(64),
+    target_paths TEXT
 );

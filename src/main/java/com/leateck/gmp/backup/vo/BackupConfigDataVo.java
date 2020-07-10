@@ -38,6 +38,8 @@ public class BackupConfigDataVo implements Serializable {
 
     private String filename;
 
+    private List<String> targetPaths;
+
     public BackupConfigDataVo(BackupConfigData backupConfigData) {
         this.id = backupConfigData.getId();
         this.backupConfigId = backupConfigData.getBackupConfigId();
@@ -46,5 +48,7 @@ public class BackupConfigDataVo implements Serializable {
                 .collect(Collectors.toList());
         this.cronExpr = backupConfigData.getCronExpr();
         this.filename = backupConfigData.getFilename();
+        this.targetPaths = Stream.of(backupConfigData.getTargetPaths().split(","))
+                .collect(Collectors.toList());
     }
 }

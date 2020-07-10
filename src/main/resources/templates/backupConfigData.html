@@ -27,6 +27,7 @@
                 <td>
                     <button th:onclick = "javascript:queryBackupConfigDataById([[${backupConfigData.id}]])">修改</button>
                     <button th:onclick = "javascript:deleteBackupConfigDataById([[${backupConfigData.id}]])">删除</button>
+                    <button th:onclick = "javascript:executeDataById([[${backupConfigData.id}]])">执行</button>
                 </td>
             </tr>
         </table>
@@ -61,6 +62,19 @@
             }
         })
     }
+
+    function executeDataById(id){
+        $.ajax({
+            type : 'POST',
+            url : '/backup/execute/' + id,
+            success : function (result) {
+                if (result === "success") {
+                    window.location.href = "/backup/data";
+                }
+            }
+        })
+    }
+
     function jump(pageName){
         window.location.href = pageName + ".html";
     }

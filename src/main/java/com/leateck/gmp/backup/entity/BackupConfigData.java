@@ -28,4 +28,6 @@ public class BackupConfigData {
 
     private String filename;
 
+    private String targetPaths;
+
 }

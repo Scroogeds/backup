@@ -53,6 +53,7 @@ public class BackupConfigDataController {
         String filename = request.getParameter("filename");
         String shellCommands = request.getParameter("shellCommands");
         String[] backupPaths = request.getParameterValues("backupPath");
+        String[] targetPaths = request.getParameterValues("targetPath");
 
         BackupConfigData backupConfigData = new BackupConfigData();
         backupConfigData.setBackupConfigId(backupConfigId);
@@ -60,6 +61,7 @@ public class BackupConfigDataController {
         backupConfigData.setFilename(filename);
         backupConfigData.setShellCommands(shellCommands);
         backupConfigData.setBackupPaths(String.join(",", backupPaths));
+        backupConfigData.setTargetPaths(String.join(",", targetPaths));
 
 
         model.addAttribute("backupConfigId", backupConfigId);

@@ -14,10 +14,18 @@
             <span>脚本名</span><input id="filename" name="filename" th:value="${backupConfigDataVo.filename}" /> <br />
             <span>Cron表达式</span><input id="cronExpr" name="cronExpr" th:value="${backupConfigDataVo.cronExpr}" /> <br />
             <span>命令</span> <br/>
-            <textarea id = "shellCommands" name="shellCommands" th:text="${backupConfigDataVo.shellCommands}"></textarea><br/>
-            <span>备份路径</span> <button name="addDir">+</button><button name="delDir">-</button><br/>
-            <div th:each="backupPath : ${backupConfigDataVo.backupPaths}">
-                <input name="backupPath" th:value="${backupPath}" />
+            <textarea id = "shellCommands" name="shellCommands" th:text="${backupConfigDataVo.shellCommands}"></textarea>
+            <div>
+                <span>备份路径</span> <button name="addDir">+</button><button name="delDir">-</button><br/>
+                <div th:each="backupPath : ${backupConfigDataVo.backupPaths}">
+                    <input name="backupPath" th:value="${backupPath}" />
+                </div>
+            </div>
+            <div>
+                <span>备份路径</span> <button name="addTargetDir">+</button><button name="delTargetDir">-</button><br/>
+                <div th:each="targetPath : ${backupConfigDataVo.targetPaths}">
+                    <input name="targetPath" th:value="${targetPath}" />
+                </div>
             </div>
         </div>
     </div>
@@ -44,12 +52,20 @@
             backupPaths[i] = backupPathObj.eq(i).val();
         }
 
+        var targetPathObj = $('[name="targetPath"]');
+        var targetPathLength = targetPathObj.length;
+        var targetPaths = [];
+        for (var i = 0; i < targetPathLength; i++) {
+            targetPaths[i] = targetPathObj.eq(i).val();
+        }
+
         var data = {
             "backupConfigId" : $("#backupConfigId").val(),
             "filename" : $("#filename").val(),
             "cronExpr" : $("#cronExpr").val(),
             "shellCommands" : $("#shellCommands").val(),
-            "backupPaths" : backupPaths
+            "backupPaths" : backupPaths,
+            "targetPaths" : targetPaths
         };
         /*alert(JSON.stringify(data))*/
 
@@ -77,6 +93,18 @@
         var dirPathLength = $('[name="backupPath"]').length;
         if (dirPathLength > 1) {
             $('[name="delDir"]').parent().children("div:last").remove();
+        }
+        return false;
+    });
+
+    $('[name="addTargetDir"]').bind("click", function () {
+        $('[name="addTargetDir"]').parent().append("<div><input name='targetPath' /></div>");
+        return false;
+    });
+    $('[name="delTargetDir"]').bind("click", function () {
+        var dirPathLength = $('[name="targetPath"]').length;
+        if (dirPathLength > 1) {
+            $('[name="delTargetDir"]').parent().children("div:last").remove();
         }
         return false;
     });
