@@ -70,10 +70,9 @@
         $.ajax({
             type : 'POST',
             url : '/backup/execute/' + id,
+            async : false,
             success : function (result) {
-                if (result === "success") {
-                    window.location.href = "/backup/data";
-                }
+                alert(result)
             }
         })
     }

@@ -27,7 +27,8 @@ public class BackupApplication {
 
         SpringApplication.run(BackupApplication.class, args);
 
-        logger.info("----------踏遍青山人未老，风景这边独好----------");
+        //logger.info("----------踏遍青山人未老，风景这边独好----------");
+        logger.info("You say I'm wrong, but you'd better prove you're right.");
     }
 
 }

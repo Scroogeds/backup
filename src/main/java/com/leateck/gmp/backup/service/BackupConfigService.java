@@ -216,10 +216,12 @@ public class BackupConfigService implements IBackupConfigService {
     public String buildShellFile(String backupConfigDataId) {
         BackupConfigData backupConfigData = backupConfigDataMapper.queryById(backupConfigDataId);
         if (null != backupConfigData) {
+            String filename = getShellFilename(backupConfigData.getFilename(), backupConfigDataId);
             buildShellFile(backupConfigData,
-                    new File(getShellFilename(backupConfigData.getFilename(), backupConfigDataId)));
+                    new File(filename));
+            RuntimeUtil.execForStr("chmod 744 " + filename);
         }
-        return "";
+        return "build success";
     }
 
     private String getShellFilename(String filename, String backupConfigDataId) {
@@ -259,11 +261,12 @@ public class BackupConfigService implements IBackupConfigService {
             if (!StringUtils.isEmpty(targetPaths)) {
                 for (String targetPath : targetPaths.split(",")) {
                     bufferedWriter.write("sshpass -p " + backupConfig.getPassword() +
-                            " scp " + backupConfig.getUsername() + "@" + backupConfig.getAddress() + ":" + targetPath);
+                            " scp " + backupConfigData.getBackupFilename() + "-$tmpDate.tar.gz " +
+                            backupConfig.getUsername() + "@" + backupConfig.getAddress() + ":" + targetPath);
                     bufferedWriter.newLine();
                 }
             }
-            bufferedWriter.newLine();
+
             bufferedWriter.write("rm -rf " + backupConfigData.getBackupFilename() + "-$tmpDate.tar.gz");
         } catch (Exception e) {
             //
@@ -280,9 +283,10 @@ public class BackupConfigService implements IBackupConfigService {
                 return RuntimeUtil.execForStr(executeShell);
             } else {
                 buildShellFile(backupConfigData, file);
+                RuntimeUtil.execForStr("chmod 744 " + executeShell);
                 return RuntimeUtil.execForStr(executeShell);
             }
         }
-        return "";
+        return "execute success";
     }
 }
