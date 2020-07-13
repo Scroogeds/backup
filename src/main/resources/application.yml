@@ -9,11 +9,6 @@ spring:
     encoding: utf-8
   profiles:
     active: dev
-  thymeleaf:
-    mode: LEGACYHTML5
-    prefix: classpath:/templates/
-    suffix: .html
-    cache: false
 #logging:
   #level:
     #root: debug

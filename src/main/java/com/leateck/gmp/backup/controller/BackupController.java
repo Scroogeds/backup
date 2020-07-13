@@ -4,7 +4,10 @@ import cn.hutool.core.util.RuntimeUtil;
 import com.leateck.gmp.backup.service.IBackupConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * <p>Title: BackupController</p>
@@ -28,18 +31,6 @@ public class BackupController {
         this.backupConfigService = backupConfigService;
     }
 
-    @ResponseBody
-    @PutMapping("/build/{backupConfigDataId}")
-    public String buildShell(@PathVariable("backupConfigDataId") String backupConfigDataId) {
-        return backupConfigService.buildShellFile(backupConfigDataId);
-    }
-
-    @ResponseBody
-    @PostMapping("/execute/{backupConfigDataId}")
-    public String executeShell(@PathVariable("backupConfigDataId") String backupConfigDataId) {
-        return backupConfigService.executeShell(backupConfigDataId);
-    }
-
     /**
      * 执行命令
      * @param cmd
@@ -49,13 +40,5 @@ public class BackupController {
     @GetMapping("/command")
     public String executeCommand(@RequestParam("cmd") String cmd){
         return RuntimeUtil.execForStr(cmd);
-    }
-
-    @ResponseBody
-    @GetMapping("/command/install-sshpass")
-    public String installSSHPass(){
-        String executeSSHPass = "yum -y install sshpass";
-        /*return RuntimeUtil.execForStr(executeSSHPass);*/
-        return executeSSHPass;
     }
 }

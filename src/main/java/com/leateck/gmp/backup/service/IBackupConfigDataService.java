@@ -1,10 +1,5 @@
 package com.leateck.gmp.backup.service;
 
-import com.leateck.gmp.backup.entity.BackupConfigData;
-import com.leateck.gmp.backup.vo.BackupConfigDataVo;
-
-import java.util.List;
-
 /**
  * <p>Title: IBackupConfigDataService</p>
  * <p>Description: </p>
@@ -18,14 +13,6 @@ import java.util.List;
  */
 public interface IBackupConfigDataService {
 
-    List<BackupConfigData> queryByBackupConfigId(String backupConfigId);
 
-    List<BackupConfigData> addBackupConfigData(BackupConfigData backupConfigData);
-
-    int modifyById(BackupConfigDataVo backupConfigDataVo);
-
-    BackupConfigDataVo queryById(String id);
-
-    int deleteById(String id);
 
 }

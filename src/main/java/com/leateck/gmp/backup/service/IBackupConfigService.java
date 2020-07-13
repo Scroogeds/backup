@@ -1,10 +1,5 @@
 package com.leateck.gmp.backup.service;
 
-import com.leateck.gmp.backup.entity.BackupConfig;
-import com.leateck.gmp.backup.vo.BackupConfigVo;
-
-import java.util.List;
-
 /**
  * <p>Title: IBackupConfigService</p>
  * <p>Description: </p>
@@ -18,21 +13,5 @@ import java.util.List;
  */
 public interface IBackupConfigService {
 
-    List<BackupConfig> queryBackupConfig();
 
-    BackupConfig queryBackupConfigById(String id);
-
-    List<BackupConfig> addBackupConfig(BackupConfig backupConfig);
-
-    int modifyBackupConfig(BackupConfig backupConfig);
-
-    int deleteBackupConfig(String id);
-
-    void initH2DataBase();
-
-    void saveH2DataBase();
-
-    String buildShellFile(String backupConfigDataId);
-
-    String executeShell(String backupConfigDataId);
 }
