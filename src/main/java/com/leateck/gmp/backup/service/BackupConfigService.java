@@ -1,6 +1,5 @@
 package com.leateck.gmp.backup.service;
 
-import com.leateck.gmp.backup.mapper.BackupConfigDataMapper;
 import com.leateck.gmp.backup.mapper.BackupConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,16 +30,9 @@ public class BackupConfigService implements IBackupConfigService {
 
     private BackupConfigMapper backupConfigMapper;
 
-    private BackupConfigDataMapper backupConfigDataMapper;
-
     @Autowired
     public void setBackupConfigMapper(BackupConfigMapper backupConfigMapper) {
         this.backupConfigMapper = backupConfigMapper;
-    }
-
-    @Autowired
-    public void setBackupConfigDataMapper(BackupConfigDataMapper backupConfigDataMapper) {
-        this.backupConfigDataMapper = backupConfigDataMapper;
     }
 
 

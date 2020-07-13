@@ -1,6 +1,5 @@
 package com.leateck.gmp.backup.entity;
 
-import com.leateck.gmp.backup.constant.BackupConstant;
 import lombok.Data;
 
 /**
@@ -15,18 +14,12 @@ import lombok.Data;
  * </pre>
  */
 @Data
-public class BackupConfig {
+public class BackupConfig extends BaseData {
 
-    private String id;
+    private String code;
 
-    private String sysType;
+    private String name;
 
-    private String address;
-
-    private String username;
-
-    private String password;
-
-    private String connectType = BackupConstant.DEFAULT_CONNECT_TYPE_VAR;
+    private String cronExpr;
 
 }
