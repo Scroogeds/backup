@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <title>backup</title>
     <script src="../../js/jquery-3.3.1.min.js"></script>
+    <link href="../../css/backup.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
+    <h1>备份配置配置</h1> <br /> <br />
     <div>
-        <button onclick=javascrtpt:addBackupConfigData()>新增</button>
+        <button class="but" onclick=javascrtpt:addBackupConfigData()>新增</button>
     </div>
     <span hidden id="backupConfigId" th:text="${backupConfigId}"></span>
-    <div th:if="not ${#lists.isEmpty(backupConfigDatas)}">
-        <table border="1" cellspacing="0" cellpadding="0">
+    <div th:if="not ${#lists.isEmpty(backupConfigDatas)}"  class="formCenter">
+        <!--<table border="1" cellspacing="0" cellpadding="0">-->
+        <table class="tableButton">
             <tr>
                 <td>Cron表达式</td>
                 <td>脚本文件名</td>
@@ -28,9 +31,9 @@
                 <!--<td th:text="${backupConfigData.saveDayNum}"></td>-->
                 <td th:text="${backupConfigData.id}"></td>
                 <td>
-                    <button th:onclick = "javascript:queryBackupConfigDataById([[${backupConfigData.id}]])">修改</button>
-                    <button th:onclick = "javascript:deleteBackupConfigDataById([[${backupConfigData.id}]])">删除</button>
-                    <button th:onclick = "javascript:executeDataById([[${backupConfigData.id}]])">执行</button>
+                    <button class="tableButton" th:onclick = "javascript:queryBackupConfigDataById([[${backupConfigData.id}]])">修改</button>
+                    <button class="tableButton" th:onclick = "javascript:deleteBackupConfigDataById([[${backupConfigData.id}]])">删除</button>
+                    <button class="tableButton" th:onclick = "javascript:executeDataById([[${backupConfigData.id}]])">执行</button>
                 </td>
             </tr>
         </table>
@@ -39,8 +42,8 @@
         <h4>没有数据</h4>
     </div>
     <div>
-        <button onclick=javascrtpt:jump('../../index')>主页</button>
-        <button onclick=javascrtpt:queryBackup()>返回</button>
+        <button class="but" onclick=javascrtpt:jump('../../index')>主页</button>
+        <button class="but" onclick=javascrtpt:queryBackup()>返回</button>
     </div>
 </body>
 <script type="text/javascript">

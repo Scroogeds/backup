@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <title>backupConfigDataUpdate</title>
     <script src="../../../js/jquery-3.3.1.min.js"></script>
+    <link href="../../../css/backup.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
     <div>
+        <h1>备份配置更新</h1> <br /> <br />
         <div>
             <span>备份和命令</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <button onclick=executeShell()>执行</button>
-            <button onclick=buildShell()>构建</button><br />
+            <button class="but" onclick=executeShell()>执行</button>
+            <button class="but" onclick=buildShell()>构建</button><br />
             <span>编号</span><input id="id" name="id" th:value="${backupConfigDataVo.id}" /> <br />
             <span>系统编号</span><input id="backupConfigId" name="backupConfigId" th:value="${backupConfigDataVo.backupConfigId}" /> <br />
             <span>脚本名</span><input id="filename" name="filename" th:value="${backupConfigDataVo.filename}" /> <br />
@@ -33,9 +35,9 @@
         </div>
     </div>
     <div>
-        <button onclick=javascrtpt:jump('../../../index')>主页</button>
-        <button onclick=updateBackupConfigData()>更新</button>
-        <button onclick=queryBackupConfigData()>返回</button>
+        <button class="but" onclick=javascrtpt:jump('../../../index')>主页</button>
+        <button class="but" onclick=updateBackupConfigData()>更新</button>
+        <button class="but" onclick=queryBackupConfigData()>返回</button>
     </div>
 </body>
 <script type="text/javascript">

@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>backupConfigDataUpdate</title>
     <script src="../../js/jquery-3.3.1.min.js"></script>
+    <link href="../../css/backup.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
     <div>
+        <h1>系统配置更新</h1> <br /> <br />
         <div>
             <span>系统资源</span> <br />
             <span>编号</span><input id="id" name="id" th:value="${backupConfig.id}" /> <br />
@@ -18,9 +20,9 @@
         </div>
     </div>
     <div>
-        <button onclick=javascrtpt:jump('../../index')>主页</button>
-        <button onclick=updateBackup()>更新</button>
-        <button onclick=queryBackup()>返回</button>
+        <button class="but" onclick=javascrtpt:jump('../../index')>主页</button>
+        <button class="but" onclick=updateBackup()>更新</button>
+        <button class="but" onclick=queryBackup()>返回</button>
     </div>
 </body>
 <script type="text/javascript">

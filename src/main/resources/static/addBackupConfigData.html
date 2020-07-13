@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>addBackupConfigData</title>
     <script src="../../js/jquery-3.3.1.min.js"></script>
+    <link href="../../css/backup.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
 <div>
+    <h1>新增备份信息</h1> <br /> <br />
     <form action="/backup/data" method="post">
         <div>
             <span>系统编号</span><input id="backupConfigId" name="backupConfigId" /> <br />
@@ -31,12 +33,18 @@
             </div>
         </div>
         <div>
-            <input type="submit" />
+            <input class="but" type="submit" />
         </div>
     </form>
+    <div><button class="but" onclick=javascrtpt:jump('index')>返回</button></div>
 </div>
 </body>
 <script type="text/javascript">
+
+    function jump(pageName){
+        window.location.href = pageName + ".html";
+    }
+
     $(function(){
         var url = window.location.search; //获取url中"?"符后的字串
         var result;

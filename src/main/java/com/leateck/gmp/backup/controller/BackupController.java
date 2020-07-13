@@ -1,5 +1,6 @@
 package com.leateck.gmp.backup.controller;
 
+import cn.hutool.core.util.RuntimeUtil;
 import com.leateck.gmp.backup.service.IBackupConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -37,5 +38,24 @@ public class BackupController {
     @PostMapping("/execute/{backupConfigDataId}")
     public String executeShell(@PathVariable("backupConfigDataId") String backupConfigDataId) {
         return backupConfigService.executeShell(backupConfigDataId);
+    }
+
+    /**
+     * 执行命令
+     * @param cmd
+     * @return
+     */
+    @ResponseBody
+    @GetMapping("/command")
+    public String executeCommand(@RequestParam("cmd") String cmd){
+        return RuntimeUtil.execForStr(cmd);
+    }
+
+    @ResponseBody
+    @GetMapping("/command/install-sshpass")
+    public String installSSHPass(){
+        String executeSSHPass = "yum -y install sshpass";
+        /*return RuntimeUtil.execForStr(executeSSHPass);*/
+        return executeSSHPass;
     }
 }

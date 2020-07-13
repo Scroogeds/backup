@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>backup</title>
     <script src="../../js/jquery-3.3.1.min.js"></script>
+    <link href="../../css/backup.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
+    <h1>系统配置信息</h1> <br /> <br />
     <div>
-        <button onclick=javascrtpt:jump('../addBackupConfig')>新增</button>
+        <button class="but" onclick=javascrtpt:jump('../addBackupConfig')>新增</button>
     </div>
-    <div th:if="not ${#lists.isEmpty(backupConfigs)}">
-        <table border="1" cellspacing="0" cellpadding="0">
+    <div th:if="not ${#lists.isEmpty(backupConfigs)}"  class="formCenter">
+        <!--<table border="1" cellspacing="0" cellpadding="0" >-->
+        <table class="tableButton">
             <tr>
                 <td>系统</td>
                 <td>地址</td>
@@ -30,9 +33,9 @@
                 <td th:text="${backupConfig.connectType}"></td>
                 <td id="id" th:text="${backupConfig.id}"></td>
                 <td>
-                    <button th:onclick = "javascript:modifyBackupConfigById([[${backupConfig.id}]])">修改</button>
-                    <button th:onclick = "javascript:queryBackupConfigDataById([[${backupConfig.id}]])">配置</button>
-                    <button th:onclick = "javascript:deleteBackupConfigById([[${backupConfig.id}]])">删除</button>
+                    <button class="tableButton" th:onclick = "javascript:modifyBackupConfigById([[${backupConfig.id}]])">修改</button>
+                    <button class="tableButton" th:onclick = "javascript:queryBackupConfigDataById([[${backupConfig.id}]])">配置</button>
+                    <button class="tableButton" th:onclick = "javascript:deleteBackupConfigById([[${backupConfig.id}]])">删除</button>
                 </td>
                 <!--<span th:text="${backupConfigStat.index}"></span>-->
                 <!--<td>
@@ -47,8 +50,8 @@
         <h4>没有数据</h4>
     </div>
     <div>
-        <button onclick=javascrtpt:jump('../index')>主页</button>
-        <button onclick=javascrtpt:jump('../index')>返回</button>
+        <button class="but" onclick=javascrtpt:jump('../index')>主页</button>
+        <button class="but" onclick=javascrtpt:jump('../index')>返回</button>
     </div>
 </body>
 <script type="text/javascript">

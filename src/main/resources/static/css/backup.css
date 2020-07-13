@@ -1,0 +1,37 @@
+body {
+    margin:0 auto;
+    text-align: center;
+}
+
+.formCenter table{
+    background-color: aquamarine;
+    width: 50%;
+    margin: 0 auto;
+    border-right: solid 1px #ff0000;
+    border-bottom: solid 1px #ff0000;
+}
+
+.formCenter table td{
+    border-left: solid 1px #ff0000;
+    border-top: solid 1px #ff0000;
+}
+
+.but {
+    background-color: orange;
+    width: 100px;
+    color: #fff;
+    border: none;
+    box-shadow: -1px -2px -2px 0 #615959;
+    border-radius: 3px;
+    font-size: 15px;
+}
+
+.tableButton {
+    background-color: orange;
+    width: 60px;
+    color: #fff;
+    border: none;
+    box-shadow: -1px -2px -2px 0 #615959;
+    border-radius: 3px;
+    font-size: 15px;
+}
