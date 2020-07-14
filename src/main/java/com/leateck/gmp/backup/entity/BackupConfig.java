@@ -1,5 +1,6 @@
 package com.leateck.gmp.backup.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -14,12 +15,22 @@ import lombok.Data;
  * </pre>
  */
 @Data
+@Builder(toBuilder = true)
 public class BackupConfig extends BaseData {
 
+    /**
+     * 编号
+     */
     private String code;
 
-    private String name;
+    /**
+     * 描述
+     */
+    private String describe;
 
+    /**
+     * 定时任务表达式
+     */
     private String cronExpr;
 
 }

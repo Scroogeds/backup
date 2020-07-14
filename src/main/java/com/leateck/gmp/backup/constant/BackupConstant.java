@@ -13,6 +13,11 @@ package com.leateck.gmp.backup.constant;
  */
 public class BackupConstant {
 
+    /**
+     * 本地连接
+     */
+    public final static String CONNECT_LOCAL_TYPE_VAR = "0";
+
     //ssh
     public final static String DEFAULT_CONNECT_TYPE_VAR = "1";
 

@@ -22,11 +22,11 @@ public interface BackupConfigMapper {
 
     List<BackupConfig> queryAll();
 
-    BackupConfig queryById(@Param("id") String id);
+    BackupConfig queryByCode(@Param("code") String code);
 
     int insertBackupConfig(@Param("backConfig") BackupConfig backupConfig);
 
-    int modifyBackupConfigById(@Param("backConfig") BackupConfig backupConfig);
+    int modifyBackupConfigByCode(@Param("backConfig") BackupConfig backupConfig);
 
-    int deleteById(@Param("id") String id);
+    int deleteByCode(@Param("code") String code);
 }

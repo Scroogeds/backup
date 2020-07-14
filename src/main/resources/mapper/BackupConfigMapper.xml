@@ -3,12 +3,12 @@
 <mapper namespace="com.leateck.gmp.backup.mapper.BackupConfigMapper">
 
     <resultMap id="backupResultMap" type="com.leateck.gmp.backup.entity.BackupConfig">
-        <id column="id" jdbcType="CHAR" property="id" />
-        <result column="sys_type" jdbcType="CHAR" property="sysType" />
-        <result column="address" jdbcType="VARCHAR" property="address" />
-        <result column="username" jdbcType="VARCHAR" property="username" />
-        <result column="password" jdbcType="VARCHAR" property="password" />
-        <result column="connect_type" jdbcType="CHAR" property="connectType" />
+        <id column="code" jdbcType="CHAR" property="code" />
+        <result column="row_id" jdbcType="CHAR" property="rowId" />
+        <result column="create_date" jdbcType="VARCHAR" property="createDate" />
+        <result column="update_date" jdbcType="VARCHAR" property="updateDate" />
+        <result column="describe" jdbcType="VARCHAR" property="describe" />
+        <result column="cron_expr" jdbcType="CHAR" property="cronExpr" />
         <!--<result column="shell_commands" jdbcType="VARCHAR" property="shellCommands" />
         <result column="backup_paths" jdbcType="VARCHAR" property="backupPaths" />-->
     </resultMap>
@@ -17,36 +17,33 @@
         select * from backup_config
     </select>
 
-    <select id="queryById" parameterType="string" resultMap="backupResultMap">
-        select * from backup_config where id = #{id}
+    <select id="queryByCode" parameterType="string" resultMap="backupResultMap">
+        select * from backup_config where code = #{code}
     </select>
 
     <insert id="insertBackupConfig" parameterType="com.leateck.gmp.backup.entity.BackupConfig">
-        insert into backup_config(id, sys_type, address, username, password, connect_type)
+        insert into backup_config(code, row_id, create_date, `describe`, cron_expr)
             values(
-                #{backConfig.id},
-                #{backConfig.sysType},
-                #{backConfig.address},
-                #{backConfig.username},
-                #{backConfig.password},
-                #{backConfig.connectType}
+                #{backConfig.code},
+                #{backConfig.rowId},
+                #{backConfig.createDate},
+                #{backConfig.describe},
+                #{backConfig.cronExpr}
             )
     </insert>
 
-    <update id="modifyBackupConfigById" parameterType="com.leateck.gmp.backup.entity.BackupConfig">
+    <update id="modifyBackupConfigByCode" parameterType="com.leateck.gmp.backup.entity.BackupConfig">
         update backup_config
         <trim prefix="set" suffixOverrides=",">
-            <if test="backConfig.sysType!=null">sys_type = #{backConfig.sysType},</if>
-            <if test="backConfig.address!=null">address = #{backConfig.address},</if>
-            <if test="backConfig.username!=null">username = #{backConfig.username},</if>
-            <if test="backConfig.password!=null">password = #{backConfig.password},</if>
-            <if test="backConfig.connectType!=null">connect_type = #{backConfig.connectType},</if>
+            <if test="backConfig.describe!=null">`describe` = #{backConfig.describe},</if>
+            <if test="backConfig.cronExpr!=null">cron_expr = #{backConfig.cronExpr},</if>
+            <if test="backConfig.updateDate!=null">update_date = #{backConfig.updateDate},</if>
         </trim>
-        where id = #{backConfig.id}
+        where code = #{backConfig.code}
     </update>
 
-    <delete id="deleteById" parameterType="string">
-        delete from backup_config where id = #{id}
+    <delete id="deleteByCode" parameterType="string">
+        delete from backup_config where code = #{code}
     </delete>
 
 </mapper>
