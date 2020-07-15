@@ -1,6 +1,8 @@
 package com.leateck.gmp.backup.core.entity;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * <p>Title: BackupConfig</p>
@@ -14,6 +16,8 @@ import lombok.Data;
  * </pre>
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class BackupConfig extends BaseData{
 
     /**
