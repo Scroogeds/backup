@@ -1,5 +1,6 @@
 package com.leateck.gmp.backup.core.mapper;
 
+import com.leateck.gmp.backup.base.mapper.BaseMapper;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,11 +19,9 @@ import java.util.List;
  * </pre>
  */
 @Mapper
-public interface BackupConfigMapper {
+public interface BackupConfigMapper extends BaseMapper<BackupConfig> {
 
     List<BackupConfig> queryAll();
-
-    List<BackupConfig> queryByPage();
 
     BackupConfig queryByCode(@Param("code") String code);
 

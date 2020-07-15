@@ -1,9 +1,8 @@
 package com.leateck.gmp.backup.core.service;
 
 import cn.hutool.core.util.IdUtil;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
-import com.leateck.gmp.backup.base.Result;
+import com.leateck.gmp.backup.base.entity.Result;
+import com.leateck.gmp.backup.base.service.BaseService;
 import com.leateck.gmp.backup.constant.BackupConstant;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.entity.BackupServer;
@@ -12,7 +11,6 @@ import com.leateck.gmp.backup.core.vo.BackupConfigVo;
 import com.leateck.gmp.backup.exception.BackupException;
 import com.leateck.gmp.backup.page.PageData;
 import com.leateck.gmp.backup.page.SearchParamWrapper;
-import com.leateck.gmp.backup.utils.PageUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +34,7 @@ import java.util.List;
  * </pre>
  */
 @Service
-public class BackupConfigService implements IBackupConfigService {
+public class BackupConfigService extends BaseService<BackupConfigMapper, BackupConfig> implements IBackupConfigService {
 
     private String shellPath;
 
@@ -66,11 +64,9 @@ public class BackupConfigService implements IBackupConfigService {
 
     @Override
     public Result<PageData<BackupConfig>> queryByPage(SearchParamWrapper wrapper) {
-        int pageNum = wrapper.getPageNum();
-        int pageSize = wrapper.getPageSize();
-        PageHelper.startPage(pageNum, pageSize);
-        List<BackupConfig> backupConfigs = backupConfigMapper.queryByPage();
-        return new Result<>(PageUtil.getPageData(new PageInfo<>(backupConfigs)));
+        /*pageSearchFirst(wrapper);
+        List<BackupConfig> backupConfigs = backupConfigMapper.queryByPage();*/
+        return new Result<>(pageSearch(wrapper));
     }
 
     @Override

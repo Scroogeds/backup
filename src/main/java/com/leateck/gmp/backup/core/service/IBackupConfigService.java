@@ -1,6 +1,6 @@
 package com.leateck.gmp.backup.core.service;
 
-import com.leateck.gmp.backup.base.Result;
+import com.leateck.gmp.backup.base.entity.Result;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.vo.BackupConfigVo;
 import com.leateck.gmp.backup.page.PageData;

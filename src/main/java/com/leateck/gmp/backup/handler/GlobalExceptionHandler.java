@@ -1,6 +1,6 @@
 package com.leateck.gmp.backup.handler;
 
-import com.leateck.gmp.backup.base.Result;
+import com.leateck.gmp.backup.base.entity.Result;
 import com.leateck.gmp.backup.exception.BackupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

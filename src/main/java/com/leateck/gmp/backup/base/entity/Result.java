@@ -1,4 +1,4 @@
-package com.leateck.gmp.backup.base;
+package com.leateck.gmp.backup.base.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
