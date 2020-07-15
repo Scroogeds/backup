@@ -1,45 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.leateck.gmp.backup.mapper.BackupConfigMapper">
+<mapper namespace="com.leateck.gmp.backup.core.mapper.BackupConfigMapper">
 
-    <resultMap id="backupResultMap" type="com.leateck.gmp.backup.entity.BackupConfig">
+    <resultMap id="backupConfigResultMap" type="com.leateck.gmp.backup.core.entity.BackupConfig">
         <id column="code" jdbcType="CHAR" property="code" />
         <result column="row_id" jdbcType="CHAR" property="rowId" />
-        <result column="create_date" jdbcType="VARCHAR" property="createDate" />
-        <result column="update_date" jdbcType="VARCHAR" property="updateDate" />
+        <result column="create_date" jdbcType="CHAR" property="createDate" />
+        <result column="update_date" jdbcType="CHAR" property="updateDate" />
         <result column="describe" jdbcType="VARCHAR" property="describe" />
-        <result column="cron_expr" jdbcType="CHAR" property="cronExpr" />
+        <result column="cron_expr" jdbcType="VARCHAR" property="cronExpr" />
+        <result column="cron_type" jdbcType="CHAR" property="cronType" />
         <!--<result column="shell_commands" jdbcType="VARCHAR" property="shellCommands" />
         <result column="backup_paths" jdbcType="VARCHAR" property="backupPaths" />-->
     </resultMap>
 
-    <select id="queryAll" resultMap="backupResultMap">
-        select * from backup_config
+    <select id="queryAll" resultMap="backupConfigResultMap">
+        select * from backup_config order by create_date
     </select>
 
-    <select id="queryByCode" parameterType="string" resultMap="backupResultMap">
+    <select id="queryByPage" resultMap="backupConfigResultMap">
+        select * from backup_config order by create_date
+    </select>
+
+    <select id="queryByCode" parameterType="string" resultMap="backupConfigResultMap">
         select * from backup_config where code = #{code}
     </select>
 
-    <insert id="insertBackupConfig" parameterType="com.leateck.gmp.backup.entity.BackupConfig">
-        insert into backup_config(code, row_id, create_date, `describe`, cron_expr)
+    <insert id="insertBackupConfig" parameterType="com.leateck.gmp.backup.core.entity.BackupConfig">
+        insert into backup_config(code, row_id, create_date, `describe`, cron_expr, cron_type)
             values(
-                #{backConfig.code},
-                #{backConfig.rowId},
-                #{backConfig.createDate},
-                #{backConfig.describe},
-                #{backConfig.cronExpr}
+                #{backupConfig.code},
+                #{backupConfig.rowId},
+                #{backupConfig.createDate},
+                #{backupConfig.describe},
+                #{backupConfig.cronExpr},
+                #{backupConfig.cronType}
             )
     </insert>
 
-    <update id="modifyBackupConfigByCode" parameterType="com.leateck.gmp.backup.entity.BackupConfig">
+    <update id="modifyBackupConfigByCode" parameterType="com.leateck.gmp.backup.core.entity.BackupConfig">
         update backup_config
         <trim prefix="set" suffixOverrides=",">
-            <if test="backConfig.describe!=null">`describe` = #{backConfig.describe},</if>
-            <if test="backConfig.cronExpr!=null">cron_expr = #{backConfig.cronExpr},</if>
-            <if test="backConfig.updateDate!=null">update_date = #{backConfig.updateDate},</if>
+            <if test="backupConfig.describe!=null">`describe` = #{backupConfig.describe},</if>
+            <if test="backupConfig.cronExpr!=null">cron_expr = #{backupConfig.cronExpr},</if>
+            <if test="backupConfig.cronType!=null">cron_type = #{backupConfig.cronType},</if>
+            <if test="backupConfig.updateDate!=null">update_date = #{backupConfig.updateDate},</if>
         </trim>
-        where code = #{backConfig.code}
+        where code = #{backupConfig.code}
     </update>
 
     <delete id="deleteByCode" parameterType="string">

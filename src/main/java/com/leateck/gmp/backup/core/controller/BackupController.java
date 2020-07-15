@@ -1,13 +1,10 @@
-package com.leateck.gmp.backup.controller;
+package com.leateck.gmp.backup.core.controller;
 
 import cn.hutool.core.util.RuntimeUtil;
-import com.leateck.gmp.backup.service.IBackupConfigService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * <p>Title: BackupController</p>
@@ -20,23 +17,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
  *          2020-07-09   luyangqian  Created
  * </pre>
  */
-@Controller
+@RestController
 @RequestMapping("/backup")
 public class BackupController {
-
-    private IBackupConfigService backupConfigService;
-
-    @Autowired
-    public void setBackupConfigService(IBackupConfigService backupConfigService) {
-        this.backupConfigService = backupConfigService;
-    }
 
     /**
      * 执行命令
      * @param cmd
      * @return
      */
-    @ResponseBody
     @GetMapping("/command")
     public String executeCommand(@RequestParam("cmd") String cmd){
         return RuntimeUtil.execForStr(cmd);

@@ -1,11 +1,10 @@
-package com.leateck.gmp.backup.entity;
+package com.leateck.gmp.backup.core.entity;
 
 import com.leateck.gmp.backup.constant.BackupConstant;
-import lombok.Builder;
 import lombok.Data;
 
 /**
- * <p>Title: SourceServer</p>
+ * <p>Title: BackupServer</p>
  * <p>Description: </p>
  * <p>@Copyright: Shanghai 2020</p>
  *
@@ -16,15 +15,14 @@ import lombok.Data;
  * </pre>
  */
 @Data
-@Builder(toBuilder = true)
-public class SourceServer extends BaseData {
+public class BackupServer extends BaseData {
 
-    private String backupCode;
+    private String configCode;
 
     /**
      * 服务器类型 0-linux 1-wins
      */
-    private String sysType;
+    private String sysType = BackupConstant.DEFAULT_SYS_TYPE;
 
     /**
      * IP地址
@@ -44,12 +42,12 @@ public class SourceServer extends BaseData {
     /**
      * 连接方式
      */
-    private String connectType;
+    private String connectType = BackupConstant.DEFAULT_SSH_TYPE_VAR;
 
     /**
      * 端口
      */
-    private String port;
+    private String port = BackupConstant.DEFAULT_SORT;
 
     /**
      * 服务器类别 0-源 1-目标
@@ -60,5 +58,10 @@ public class SourceServer extends BaseData {
      * 路径
      */
     private String filepath;
+
+    /**
+     * 保存天数 -1不删除
+     */
+    private int saveDayNum = -1;
 
 }

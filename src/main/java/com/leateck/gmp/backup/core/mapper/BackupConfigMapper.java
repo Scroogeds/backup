@@ -1,6 +1,6 @@
-package com.leateck.gmp.backup.mapper;
+package com.leateck.gmp.backup.core.mapper;
 
-import com.leateck.gmp.backup.entity.BackupConfig;
+import com.leateck.gmp.backup.core.entity.BackupConfig;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -22,11 +22,13 @@ public interface BackupConfigMapper {
 
     List<BackupConfig> queryAll();
 
+    List<BackupConfig> queryByPage();
+
     BackupConfig queryByCode(@Param("code") String code);
 
-    int insertBackupConfig(@Param("backConfig") BackupConfig backupConfig);
+    int insertBackupConfig(@Param("backupConfig") BackupConfig backupConfig);
 
-    int modifyBackupConfigByCode(@Param("backConfig") BackupConfig backupConfig);
+    int modifyBackupConfigByCode(@Param("backupConfig") BackupConfig backupConfig);
 
     int deleteByCode(@Param("code") String code);
 }

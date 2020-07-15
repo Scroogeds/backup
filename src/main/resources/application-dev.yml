@@ -22,7 +22,14 @@ spring:
 
 mybatis:
   mapperLocations: classpath:mapper/*.xml
-  type-aliases-package: com.leateck.gmp.backup.entity
+  type-aliases-package: com.leateck.gmp.backup.core.entity
+  #type-handlers-package: com.leateck.gmp.backup.handler
   #日志打印
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+pagehelper:
+  helperDialect: h2
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql

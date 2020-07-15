@@ -1,5 +1,7 @@
-package com.leateck.gmp.backup.entity;
+package com.leateck.gmp.backup.core.entity;
 
+import com.leateck.gmp.backup.annoation.InsertField;
+import com.leateck.gmp.backup.annoation.UpdateField;
 import lombok.Data;
 
 /**
@@ -16,9 +18,12 @@ import lombok.Data;
 @Data
 public class BaseData {
 
+    @InsertField
     private String rowId;
 
+    @InsertField
     private String createDate;
 
+    @UpdateField
     private String updateDate;
 }

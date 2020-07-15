@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *          2020-06-28   luyangqian  Created
  * </pre>
  */
-@MapperScan("com.leateck.gmp.backup.mapper")
+@MapperScan("com.leateck.gmp.backup.core.mapper")
 @SpringBootApplication
 public class BackupApplication {
 

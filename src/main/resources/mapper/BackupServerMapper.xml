@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.leateck.gmp.backup.core.mapper.BackupServerMapper">
+
+    <resultMap id="backupServerResultMap" type="com.leateck.gmp.backup.core.entity.BackupServer">
+        <id column="row_id" jdbcType="CHAR" property="rowId" />
+        <result column="create_date" jdbcType="CHAR" property="createDate" />
+        <result column="update_date" jdbcType="CHAR" property="updateDate" />
+        <result column="config_code" jdbcType="CHAR" property="configCode" />
+        <result column="sys_type" jdbcType="CHAR" property="sysType" />
+        <result column="address" jdbcType="VARCHAR" property="address" />
+        <result column="username" jdbcType="VARCHAR" property="username" />
+        <result column="password" jdbcType="VARCHAR" property="password" />
+        <result column="connect_type" jdbcType="CHAR" property="connectType" />
+        <result column="port" jdbcType="VARCHAR" property="port" />
+        <result column="server_type" jdbcType="CHAR" property="serverType" />
+        <result column="filepath" jdbcType="VARCHAR" property="filepath" />
+        <result column="save_day_num" jdbcType="INTEGER" property="saveDayNum" />
+        <!--<result column="shell_commands" jdbcType="VARCHAR" property="shellCommands" />
+        <result column="backup_paths" jdbcType="VARCHAR" property="backupPaths" />-->
+    </resultMap>
+
+    <select id="queryByConfigCode" resultMap="backupServerResultMap" parameterType="string">
+        select * from backup_server where config_code = #{configCode} order by create_date
+    </select>
+
+    <select id="queryByRowId" parameterType="string" resultMap="backupServerResultMap">
+        select * from backup_server where row_id = #{rowId}
+    </select>
+
+    <insert id="insertBackupServer" parameterType="com.leateck.gmp.backup.core.entity.BackupServer">
+        insert into backup_server(row_id, create_date, config_code, sys_type, address, username,
+        password, connect_type, port, server_type, filepath, save_day_num)
+            values(
+                #{backupServer.rowId},
+                #{backupServer.createDate},
+                #{backupServer.configCode},
+                #{backupServer.sysType},
+                #{backupServer.address},
+                #{backupServer.username},
+                #{backupServer.password},
+                #{backupServer.connectType},
+                #{backupServer.port},
+                #{backupServer.serverType},
+                #{backupServer.filepath},
+                #{backupServer.saveDayNum}
+            )
+    </insert>
+
+    <delete id="deleteByConfigCode" parameterType="string">
+        delete from backup_server where config_code = #{configCode}
+    </delete>
+
+</mapper>

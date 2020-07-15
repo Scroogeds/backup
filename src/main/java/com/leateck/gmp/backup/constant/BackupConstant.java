@@ -19,9 +19,30 @@ public class BackupConstant {
     public final static String CONNECT_LOCAL_TYPE_VAR = "0";
 
     //ssh
-    public final static String DEFAULT_CONNECT_TYPE_VAR = "1";
+    public final static String DEFAULT_SSH_TYPE_VAR = "1";
 
-    public final static String BACKUP_CONFIG_SIGN = "BC";
+    public final static String DEFAULT_SYS_TYPE = "0";
 
-    public final static String BACKUP_CONFIG_DATA_SIGN = "BD";
+    public final static String DEFAULT_SORT = "22";
+
+    /**
+     * 源服务器
+     */
+    public final static String SERVER_TYPE_SOURCE_VAR = "0";
+
+    /**
+     * 目标服务器
+     */
+    public final static String SERVER_TYPE_TARGET_VAR = "1";
+
+    public final static String BASE_FIELD_ROW_ID = "rowId";
+    public final static String BASE_FIELD_CREATE_TIME = "createDate";
+    public final static String BASE_FIELD_UPDATE_TIME = "updateDate";
+
+
+    /**
+     * 分页查询默认值
+     */
+    public final static int SEARCH_DEFAULT_PAGE_NUM = 1;
+    public final static int SEARCH_DEFAULT_PAGE_SIZE = 10;
 }
