@@ -13,12 +13,10 @@ import com.leateck.gmp.backup.page.PageData;
 import com.leateck.gmp.backup.page.SearchParamWrapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,13 +33,6 @@ import java.util.List;
  */
 @Service
 public class BackupConfigService extends BaseService<BackupConfigMapper, BackupConfig> implements IBackupConfigService {
-
-    private String shellPath;
-
-    @Value("${gmp-backup.shellPath}")
-    public void setShellPath(String shellPath) {
-        this.shellPath = shellPath.endsWith(File.separator) ? shellPath : shellPath + File.separator;
-    }
 
     private BackupConfigMapper backupConfigMapper;
 

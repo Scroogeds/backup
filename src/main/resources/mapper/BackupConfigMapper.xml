@@ -15,11 +15,11 @@
     </resultMap>
 
     <select id="queryAll" resultMap="backupConfigResultMap">
-        select * from backup_config order by create_date
+        select * from backup_config order by create_date desc
     </select>
 
     <select id="queryByPage" resultMap="backupConfigResultMap">
-        select * from backup_config order by create_date
+        select * from backup_config order by create_date desc
     </select>
 
     <select id="queryByCode" parameterType="string" resultMap="backupConfigResultMap">

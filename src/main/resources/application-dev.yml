@@ -2,7 +2,7 @@ gmp-backup:
   database:
     enabled: true
     path: /gmpcloud/data/pgdata
-  shellPath: /Users/luyangqian/Desktop/test
+  base-shell-path: /Users/luyangqian/Desktop/test
 
 spring:
   datasource:

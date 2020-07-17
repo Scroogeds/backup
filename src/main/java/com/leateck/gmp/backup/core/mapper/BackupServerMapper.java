@@ -22,6 +22,9 @@ public interface BackupServerMapper {
 
     List<BackupServer> queryByConfigCode(@Param("configCode") String configCode);
 
+    List<BackupServer> queryByConfigCodeAndServerType(@Param("configCode") String configCode,
+                                                      @Param("serverType") String serverType);
+
     BackupServer queryByRowId(@Param("rowId") String rowId);
 
     int insertBackupServer(@Param("backupServer") BackupServer backupServer);

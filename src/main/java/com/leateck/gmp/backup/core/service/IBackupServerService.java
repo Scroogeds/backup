@@ -19,6 +19,8 @@ public interface IBackupServerService {
 
     List<BackupServer> queryByConfigCode(String configCode);
 
+    List<BackupServer> queryByConfigCodeAndServerType(String configCode, String serverType);
+
     void addBackupServer(String backupCode, List<BackupServer> sourceServers, List<BackupServer> targetServers);
 
     int deleteByConfigCode(String configCode);

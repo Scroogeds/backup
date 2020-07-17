@@ -26,6 +26,12 @@ public class BackupConstant {
     public final static String DEFAULT_SORT = "22";
 
     /**
+     * cron的方式
+     */
+    public final static String DEFAULT_CORN_EXPR_TYPE = "0";
+    public final static String DEFAULT_CORN_EXPR_TYPE_JAVA = "1";
+
+    /**
      * 源服务器
      */
     public final static String SERVER_TYPE_SOURCE_VAR = "0";

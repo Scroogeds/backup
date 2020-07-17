@@ -36,6 +36,11 @@ public class BackupServerService implements IBackupServerService{
         return backupServerMapper.queryByConfigCode(configCode);
     }
 
+    @Override
+    public List<BackupServer> queryByConfigCodeAndServerType(String configCode, String serverType) {
+        return backupServerMapper.queryByConfigCodeAndServerType(configCode, serverType);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void addBackupServer(String backupCode, List<BackupServer> sourceServers, List<BackupServer> targetServers) {

@@ -21,7 +21,13 @@
     </resultMap>
 
     <select id="queryByConfigCode" resultMap="backupServerResultMap" parameterType="string">
-        select * from backup_server where config_code = #{configCode} order by create_date
+        select * from backup_server where config_code = #{configCode} order by create_date desc
+    </select>
+
+    <select id="queryByConfigCodeAndServerType" resultMap="backupServerResultMap">
+        select * from backup_server
+        where config_code = #{configCode} and server_type = #{serverType}
+        order by create_date desc
     </select>
 
     <select id="queryByRowId" parameterType="string" resultMap="backupServerResultMap">

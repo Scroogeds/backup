@@ -1,5 +1,6 @@
 package com.leateck.gmp.backup.core.entity;
 
+import com.leateck.gmp.backup.constant.BackupConstant;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -45,6 +46,6 @@ public class BackupConfig extends BaseData{
      * cron支持的方式 0-linux 1-java
      */
     @ApiModelProperty(value = "cron支持的方式 0-linux 1-java")
-    private String cronType;
+    private String cronType = BackupConstant.DEFAULT_CORN_EXPR_TYPE;
 
 }
