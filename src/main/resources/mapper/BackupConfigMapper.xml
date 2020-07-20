@@ -18,6 +18,10 @@
         select * from backup_config order by create_date desc
     </select>
 
+    <select id="queryJavaCron" parameterType="string" resultMap="backupConfigResultMap">
+        select * from backup_config where cron_type = #{cronType} order by create_date desc
+    </select>
+
     <select id="queryByPage" resultMap="backupConfigResultMap">
         select * from backup_config order by create_date desc
     </select>

@@ -1,6 +1,12 @@
 package com.leateck.gmp.backup.core.service;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RuntimeUtil;
+import cn.hutool.core.util.ZipUtil;
+import cn.hutool.cron.CronUtil;
+import cn.hutool.extra.ftp.Ftp;
+import cn.hutool.extra.ssh.Sftp;
 import com.leateck.gmp.backup.base.entity.Result;
 import com.leateck.gmp.backup.constant.BackupConstant;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
@@ -11,11 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -139,7 +147,7 @@ public class BackupService implements IBackupService {
                 bufferedWriter.newLine();
 
                 //进行压缩
-                bufferedWriter.write("tar -zxvf backup-$tmpDate.tar.gz backup");
+                bufferedWriter.write("tar -zcvf backup-$tmpDate.tar.gz backup");
                 bufferedWriter.newLine();
 
                 //备份到指定的服务器的目录
@@ -194,6 +202,81 @@ public class BackupService implements IBackupService {
         }
     }
 
+    private void nonLinuxExecuteShell(String code) {
+        //添加源服务器信息
+        List<BackupServer> sourceServers = backupServerService
+                .queryByConfigCodeAndServerType(code, BackupConstant.SERVER_TYPE_SOURCE_VAR);
+        if (!CollectionUtils.isEmpty(sourceServers)) {
+            String cacheFilePath = baseShellPath + File.separator + "backup";
+            FileUtil.mkdir(cacheFilePath);
+            for (BackupServer sourceServer : sourceServers) {
+                String filepath = sourceServer.getFilepath();
+                if (!StringUtils.isEmpty(filepath)) {
+                    String[] sourcePaths = filepath.split(",");
+                    if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        for (String sourcePath : sourcePaths) {
+                            FileUtil.copy(sourcePath, cacheFilePath, true);
+                        }
+                    } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        //登录（帐号密码的SSH服务器）
+                        Sftp sftp = new Sftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
+                                sourceServer.getUsername(), sourceServer.getPassword());
+                        for (String sourcePath : sourcePaths) {
+                            //下载远程文件
+                            sftp.download(sourcePath, FileUtil.file(cacheFilePath));
+                        }
+                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        //登录（帐号密码的FTP服务器）
+                        Ftp ftp = new Ftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
+                                sourceServer.getUsername(), sourceServer.getPassword());
+                        for (String sourcePath : sourcePaths) {
+                            //下载远程文件
+                            ftp.download(sourcePath, FileUtil.file(cacheFilePath));
+                        }
+                    }
+                }
+
+            }
+            String fileCompressName = cacheFilePath + "-" +
+                    DateUtil.format(LocalDateTime.now(), "yyyyMMddHHmmss") + ".zip";
+            ZipUtil.zip(cacheFilePath, fileCompressName);
+            //备份到指定的服务器的目录
+            List<BackupServer> targetServers = backupServerService
+                    .queryByConfigCodeAndServerType(code, BackupConstant.SERVER_TYPE_TARGET_VAR);
+            if (!CollectionUtils.isEmpty(targetServers)) {
+                for (BackupServer targetServer : targetServers) {
+                    String filepath = targetServer.getFilepath();
+                    if (!StringUtils.isEmpty(filepath)) {
+                        String[] targetPaths = filepath.split(",");
+                        if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(targetServer.getConnectType())) {
+                            for (String targetPath : targetPaths) {
+                                FileUtil.copy(fileCompressName, targetPath, true);
+                            }
+                        } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(targetServer.getConnectType())){
+                            //登录（帐号密码的SSH服务器）
+                            Sftp sftp = new Sftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
+                                    targetServer.getUsername(), targetServer.getPassword());
+                            for (String targetPath : targetPaths) {
+                                //上传本地文件
+                                sftp.upload(targetPath, FileUtil.file(fileCompressName));
+                            }
+                        } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(targetServer.getConnectType())) {
+                            //登录（帐号密码的FTP服务器）
+                            Ftp ftp = new Ftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
+                                    targetServer.getUsername(), targetServer.getPassword());
+                            for (String targetPath : targetPaths) {
+                                //上传本地文件
+                                ftp.upload(targetPath, FileUtil.file(fileCompressName));
+                            }
+                        }
+                    }
+                }
+            }
+            FileUtil.del(fileCompressName);
+            FileUtil.del(cacheFilePath);
+        }
+    }
+
     @Override
     public Result<String> executeShell(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
@@ -209,7 +292,8 @@ public class BackupService implements IBackupService {
                     return new Result<>(RuntimeUtil.execForStr(filename));
                 }
             } else if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(backupConfig.getCronType())){
-                //todo cronjavade
+                //java代码方式执行
+                nonLinuxExecuteShell(code);
             }
 
         }
@@ -220,18 +304,25 @@ public class BackupService implements IBackupService {
     public Result<String> buildCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(backupConfig.getCronType())) {
-                throw new BackupException(100003, "配置类型不正确，不能加入Linux系统定时任务", code);
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(backupConfig.getCronType())) {
+                /*throw new BackupException(100003, "配置类型不正确，不能加入Linux系统定时任务", code);*/
+                String filename = getShellFilename(code);
+                File file = new File(filename);
+                if (!file.exists()) {
+                    buildShellFile(code, file);
+                    RuntimeUtil.execForStr("chmod 744 " + filename);
+                }
+                String exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
+                        filename + "\" >> /var/spool/cron/root");
+                return new Result<>(exec);
+            } else {
+                CronUtil.remove(code);
+                CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
+                // 支持秒级别定时任务
+                //CronUtil.setMatchSecond(true);
+                CronUtil.start();
             }
-            String filename = getShellFilename(code);
-            File file = new File(filename);
-            if (!file.exists()) {
-                buildShellFile(code, file);
-                RuntimeUtil.execForStr("chmod 744 " + filename);
-            }
-            String exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
-                    filename + "\" >> /var/spool/cron/root");
-            return new Result<>(exec);
+
         }
         return new Result<>(code);
     }
@@ -240,13 +331,39 @@ public class BackupService implements IBackupService {
     public Result<String> removeCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(backupConfig.getCronType())) {
-                throw new BackupException(100004, "配置类型不正确，不能删除Linux系统定时任务", code);
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(backupConfig.getCronType())) {
+                /*throw new BackupException(100004, "配置类型不正确，不能删除Linux系统定时任务", code);*/
+                String filename = getShellFilename(code);
+                String exec = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
+                return new Result<>(exec);
+            } else {
+                CronUtil.remove(code);
             }
-            String filename = getShellFilename(code);
-            String exec = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
-            return new Result<>(exec);
+
         }
         return new Result<>(code);
+    }
+
+    /**
+     *
+     * Describe: 项目初始化时加载所有的javaCronType的配置
+     *
+     * @param
+     * @exception
+     * @auther: luyangqian
+     * @date: 2020-07-20 18:04
+     */
+    @Override
+    public void initJavaCron() {
+        List<BackupConfig> backupConfigs = backupConfigMapper.queryJavaCron(BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA);
+        if (!CollectionUtils.isEmpty(backupConfigs)) {
+            for (BackupConfig backupConfig : backupConfigs) {
+                String code = backupConfig.getCode();
+                CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
+            }
+            // 支持秒级别定时任务
+            //CronUtil.setMatchSecond(true);
+            CronUtil.start();
+        }
     }
 }

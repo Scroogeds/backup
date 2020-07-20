@@ -23,4 +23,6 @@ public interface IBackupService {
 
     Result<String> removeCron(String code);
 
+    void initJavaCron();
+
 }
