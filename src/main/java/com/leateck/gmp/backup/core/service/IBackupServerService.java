@@ -24,4 +24,6 @@ public interface IBackupServerService {
     void addBackupServer(String backupCode, List<BackupServer> sourceServers, List<BackupServer> targetServers);
 
     int deleteByConfigCode(String configCode);
+
+    BackupServer queryByRowId(String code);
 }

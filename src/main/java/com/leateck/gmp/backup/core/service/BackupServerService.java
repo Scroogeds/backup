@@ -65,4 +65,9 @@ public class BackupServerService implements IBackupServerService{
     public int deleteByConfigCode(String configCode) {
         return backupServerMapper.deleteByConfigCode(configCode);
     }
+
+    @Override
+    public BackupServer queryByRowId(String rowId) {
+        return backupServerMapper.queryByRowId(rowId);
+    }
 }

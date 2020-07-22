@@ -1,6 +1,10 @@
 package com.leateck.gmp.backup.core.service;
 
 import com.leateck.gmp.backup.base.entity.Result;
+import com.leateck.gmp.backup.core.vo.RecoverConfig;
+
+import java.io.InputStream;
+import java.util.Map;
 
 /**
  * <p>Title: IBackupService</p>
@@ -24,5 +28,11 @@ public interface IBackupService {
     Result<String> removeCron(String code);
 
     void initJavaCron();
+
+    Result<Map<String, Object>> queryDirFile(RecoverConfig recoverConfig);
+
+    InputStream downFile(String cacheId, String filename);
+
+    Result<String> uploadFile(String cacheId, String filename, RecoverConfig recoverConfig);
 
 }

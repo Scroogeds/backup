@@ -3,6 +3,7 @@ gmp-backup:
     enabled: true
     path: /gmpcloud/data/pgdata
   base-shell-path: /Users/luyangqian/Desktop/test
+  cronType: 0
 
 spring:
   datasource:

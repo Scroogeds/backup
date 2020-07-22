@@ -3,6 +3,8 @@ package com.leateck.gmp.backup.core.vo;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.entity.BackupServer;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.List;
@@ -19,6 +21,8 @@ import java.util.List;
  * </pre>
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
+@ToString
 public class BackupConfigVo extends BackupConfig implements Serializable {
 
     private static final long serialVersionUID = -7579931924203415026L;

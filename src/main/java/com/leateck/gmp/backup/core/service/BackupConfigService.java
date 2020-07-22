@@ -13,6 +13,7 @@ import com.leateck.gmp.backup.page.PageData;
 import com.leateck.gmp.backup.page.SearchParamWrapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -33,6 +34,13 @@ import java.util.List;
  */
 @Service
 public class BackupConfigService extends BaseService<BackupConfigMapper, BackupConfig> implements IBackupConfigService {
+
+    private String cronType;
+
+    @Value("${gmp-backup.cronType}")
+    public void setCronType(String cronType) {
+        this.cronType = cronType;
+    }
 
     private BackupConfigMapper backupConfigMapper;
 
@@ -101,6 +109,7 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
         BeanUtils.copyProperties(backupConfigVo, backupConfig);
         String code = IdUtil.simpleUUID();
         backupConfig.setCode(code);
+        backupConfig.setCronType(cronType);
         if (backupConfigMapper.insertBackupConfig(backupConfig) > 0) {
             backupServerService.addBackupServer(code, sourceServers, targetServers);
         }
@@ -116,6 +125,7 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
         }
         BackupConfig backupConfig = new BackupConfig();
         BeanUtils.copyProperties(backupConfigVo, backupConfig);
+        backupConfig.setCronType(cronType);
         if (backupConfigMapper.modifyBackupConfigByCode(backupConfig) > 0) {
             String code = backupConfig.getCode();
             backupServerService.deleteByConfigCode(code);

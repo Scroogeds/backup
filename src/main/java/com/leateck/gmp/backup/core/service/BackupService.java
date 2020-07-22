@@ -1,7 +1,11 @@
 package com.leateck.gmp.backup.core.service;
 
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileReader;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.cron.CronUtil;
@@ -12,19 +16,23 @@ import com.leateck.gmp.backup.constant.BackupConstant;
 import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.entity.BackupServer;
 import com.leateck.gmp.backup.core.mapper.BackupConfigMapper;
+import com.leateck.gmp.backup.core.vo.RecoverConfig;
+import com.leateck.gmp.backup.core.vo.ServerConfig;
 import com.leateck.gmp.backup.exception.BackupException;
+import com.leateck.gmp.backup.utils.RemoteRuntimeUtil;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Title: BackupService</p>
@@ -42,9 +50,16 @@ public class BackupService implements IBackupService {
 
     private String baseShellPath;
 
+    private String cronType;
+
     @Value("${gmp-backup.base-shell-path}")
     public void setShellPath(String baseShellPath) {
         this.baseShellPath = baseShellPath.endsWith(File.separator) ? baseShellPath : baseShellPath + File.separator;
+    }
+
+    @Value("${gmp-backup.cronType}")
+    public void setCronType(String cronType) {
+        this.cronType = cronType;
     }
 
     private BackupConfigMapper backupConfigMapper;
@@ -61,11 +76,21 @@ public class BackupService implements IBackupService {
         this.backupServerService = backupServerService;
     }
 
+    /**
+     * 过期时间 5分钟
+     */
+    private static final long EXPIRE_TIME = 1000 * 60 * 5;
+
+    /**
+     * 带过期时间的集合
+     */
+    TimedCache<String, ServerConfig> recoverConfigTimedCache = CacheUtil.newTimedCache(EXPIRE_TIME);
+
     @Override
     public Result<String> buildShell(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(backupConfig.getCronType())) {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(cronType)) {
                 throw new BackupException(100002, "配置类型不正确，不能生成脚本文件", code);
             }
             String filename = getShellFilename(code);
@@ -212,26 +237,33 @@ public class BackupService implements IBackupService {
             for (BackupServer sourceServer : sourceServers) {
                 String filepath = sourceServer.getFilepath();
                 if (!StringUtils.isEmpty(filepath)) {
+
                     String[] sourcePaths = filepath.split(",");
                     if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        String sourceCopyPath = cacheFilePath + File.separator + "127.0.0.1";
+                        FileUtil.mkdir(sourceCopyPath);
                         for (String sourcePath : sourcePaths) {
-                            FileUtil.copy(sourcePath, cacheFilePath, true);
+                            FileUtil.copy(sourcePath, sourceCopyPath, true);
                         }
                     } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        String sourceCopyPath = cacheFilePath + File.separator + sourceServer.getAddress();
+                        FileUtil.mkdir(sourceCopyPath);
                         //登录（帐号密码的SSH服务器）
                         Sftp sftp = new Sftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
                                 sourceServer.getUsername(), sourceServer.getPassword());
                         for (String sourcePath : sourcePaths) {
                             //下载远程文件
-                            sftp.download(sourcePath, FileUtil.file(cacheFilePath));
+                            sftp.download(sourcePath, FileUtil.file(sourceCopyPath));
                         }
                     } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(sourceServer.getConnectType())) {
+                        String sourceCopyPath = cacheFilePath + File.separator + sourceServer.getAddress();
+                        FileUtil.mkdir(sourceCopyPath);
                         //登录（帐号密码的FTP服务器）
                         Ftp ftp = new Ftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
                                 sourceServer.getUsername(), sourceServer.getPassword());
                         for (String sourcePath : sourcePaths) {
                             //下载远程文件
-                            ftp.download(sourcePath, FileUtil.file(cacheFilePath));
+                            ftp.download(sourcePath, FileUtil.file(sourceCopyPath));
                         }
                     }
                 }
@@ -281,7 +313,7 @@ public class BackupService implements IBackupService {
     public Result<String> executeShell(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(backupConfig.getCronType())) {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 String filename = getShellFilename(code);
                 File file = new File(filename);
                 if (file.exists()) {
@@ -291,7 +323,7 @@ public class BackupService implements IBackupService {
                     RuntimeUtil.execForStr("chmod 744 " + filename);
                     return new Result<>(RuntimeUtil.execForStr(filename));
                 }
-            } else if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(backupConfig.getCronType())){
+            } else if (BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA.equals(cronType)){
                 //java代码方式执行
                 nonLinuxExecuteShell(code);
             }
@@ -304,7 +336,7 @@ public class BackupService implements IBackupService {
     public Result<String> buildCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(backupConfig.getCronType())) {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 /*throw new BackupException(100003, "配置类型不正确，不能加入Linux系统定时任务", code);*/
                 String filename = getShellFilename(code);
                 File file = new File(filename);
@@ -331,7 +363,7 @@ public class BackupService implements IBackupService {
     public Result<String> removeCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
         if (null != backupConfig) {
-            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(backupConfig.getCronType())) {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 /*throw new BackupException(100004, "配置类型不正确，不能删除Linux系统定时任务", code);*/
                 String filename = getShellFilename(code);
                 String exec = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
@@ -366,4 +398,233 @@ public class BackupService implements IBackupService {
             CronUtil.start();
         }
     }
+
+    /**
+     * 获取服务器上指定文件夹下的文件
+     * @param recoverConfig
+     * @return
+     */
+    @Override
+    public Result<Map<String, Object>> queryDirFile(RecoverConfig recoverConfig) {
+        String recoverDir = recoverConfig.getRecoverDir();
+        if (StringUtils.isEmpty(recoverDir)) {
+            throw new BackupException(100003, "恢复的路径配置不能为空", Collections.emptyList());
+        }
+        String cacheId = IdUtil.simpleUUID();
+        ServerConfig serverConfig = new ServerConfig();
+        BeanUtils.copyProperties(recoverConfig, serverConfig);
+        recoverConfigTimedCache.put(cacheId, serverConfig);
+
+        if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(recoverConfig.getConnectType())) {
+            return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+        } else {
+            String serverCode = recoverConfig.getServerCode();
+            String address = recoverConfig.getAddress();
+            String password = recoverConfig.getPassword();
+            String username = recoverConfig.getUsername();
+            String port = recoverConfig.getPort();
+
+            if (!StringUtils.isEmpty(serverCode)) {
+                BackupServer backupServer = backupServerService.queryByRowId(serverCode);
+                if (null != backupServer) {
+                    BeanUtils.copyProperties(backupServer, serverConfig);
+                    recoverConfigTimedCache.put(cacheId, serverConfig);
+                    if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(backupServer.getConnectType())) {
+                        return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+                    } else {
+                        address = backupServer.getAddress();
+                        password = backupServer.getPassword();
+                        username = backupServer.getUsername();
+                        port = backupServer.getPort();
+                    }
+                }
+            }
+            /*if (cronType.equals(BackupConstant.DEFAULT_CORN_EXPR_TYPE)) {
+                RuntimeUtil.execForStr("cd " + baseShellPath, "mkdir ")
+            } else {
+
+            }*/
+            return new Result<>(packageReturn(cacheId, RemoteRuntimeUtil
+                    .execForLines(address, Integer.valueOf(port), username, password, "ls " + recoverDir)));
+        }
+    }
+
+    @Override
+    public InputStream downFile(String cacheId, String filename) {
+
+        if (!recoverConfigTimedCache.containsKey(cacheId)) {
+            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
+        }
+
+        ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);
+        if (null == serverConfig) {
+            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
+        }
+
+        String recoverDir = serverConfig.getRecoverDir();
+        if (!recoverDir.endsWith(File.separator)) {
+            recoverDir = recoverDir + File.separator;
+        }
+
+        if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+            FileReader fileReader = new FileReader(recoverDir + filename);
+            return fileReader.getInputStream();
+        } else {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                try {
+                    RuntimeUtil.execForStr("cd " + baseShellPath, "mkdir recoverTemporary",
+                            "sshpass -p " + serverConfig.getPassword() +
+                            " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
+                            "-r backup-$tmpDate.tar.gz " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
+                            ":" + recoverDir + filename + " " + baseShellPath + "/recoverTemporary");
+                    FileReader fileReader = new FileReader(baseShellPath + "/recoverTemporary/" + filename);
+                    return fileReader.getInputStream();
+                } finally {
+                    //执行结束删掉中间的目录
+                    RuntimeUtil.execForStr("rm -rf recoverTemporary");
+                }
+            } else {
+                String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
+                try {
+                    FileUtil.mkdir(recoverTemporaryPath);
+                    if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(serverConfig.getConnectType())) {
+
+                        //登录（帐号密码的SSH服务器）
+                        Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+
+                        //下载远程文件
+                        sftp.download(recoverDir + filename, FileUtil.file(recoverTemporaryPath));
+                        FileReader fileReader = new FileReader(recoverTemporaryPath + File.separator + filename);
+                        return fileReader.getInputStream();
+                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                        //登录（帐号密码的FTP服务器）
+                        Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+                        //下载远程文件
+                        ftp.download(recoverDir + filename, FileUtil.file(recoverTemporaryPath));
+                        FileReader fileReader = new FileReader(recoverTemporaryPath + File.separator + filename);
+                        return fileReader.getInputStream();
+                    }
+                } finally {
+                    FileUtil.del(recoverTemporaryPath);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Result<String> uploadFile(String cacheId, String filename, RecoverConfig recoverConfig) {
+
+        String targetRecoverDir = recoverConfig.getRecoverDir();
+        if (StringUtils.isEmpty(targetRecoverDir)) {
+            throw new BackupException(100005, "上传的路径配置不能为空", targetRecoverDir);
+        }
+
+        if (!recoverConfigTimedCache.containsKey(cacheId)) {
+            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
+        }
+
+        ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);
+        if (null == serverConfig) {
+            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
+        }
+
+        String sourceRecoverDir = serverConfig.getRecoverDir();
+        if (!sourceRecoverDir.endsWith(File.separator)) {
+            sourceRecoverDir = sourceRecoverDir + File.separator;
+        }
+
+        String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
+        FileUtil.mkdir(recoverTemporaryPath);
+
+        try {
+            if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                FileUtil.copy(sourceRecoverDir + filename, recoverTemporaryPath, true);
+            } else {
+                if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                    RuntimeUtil.execForStr("sshpass -p " + serverConfig.getPassword() +
+                                    " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
+                                    " " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
+                                    ":" + sourceRecoverDir + filename + " " + recoverTemporaryPath);
+                } else {
+                    if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                        //登录（帐号密码的SSH服务器）
+                        Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+                        //下载远程文件
+                        sftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
+                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                        //登录（帐号密码的FTP服务器）
+                        Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+                        //下载远程文件
+                        ftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
+                    }
+                }
+            }
+
+            if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(recoverConfig.getConnectType())) {
+                FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
+            } else {
+                String serverCode = recoverConfig.getServerCode();
+                String address = recoverConfig.getAddress();
+                String password = recoverConfig.getPassword();
+                String username = recoverConfig.getUsername();
+                String port = recoverConfig.getPort();
+                String connectType = recoverConfig.getConnectType();
+
+                if (!StringUtils.isEmpty(serverCode)) {
+                    BackupServer backupServer = backupServerService.queryByRowId(serverCode);
+                    if (null != backupServer) {
+                        if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(backupServer.getConnectType())) {
+                            FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
+                        } else {
+                            address = backupServer.getAddress();
+                            password = backupServer.getPassword();
+                            username = backupServer.getUsername();
+                            port = backupServer.getPort();
+                            connectType = backupServer.getConnectType();
+                        }
+                    }
+                }
+
+                if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                    RuntimeUtil.execForStr("sshpass -p " + password + " scp -o StrictHostKeyChecking=no -P " + port +
+                                    " " + recoverTemporaryPath + File.separator + filename + " " +
+                                    username + "@" + address +
+                                    ":" + targetRecoverDir);
+                } else {
+                    if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(connectType)) {
+                        //登录（帐号密码的SSH服务器）
+                        Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+                        //上传本地文件
+                        sftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
+                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(connectType)) {
+                        //登录（帐号密码的FTP服务器）
+                        Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                serverConfig.getUsername(), serverConfig.getPassword());
+                        //上传本地文件
+                        ftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
+                    }
+                }
+            }
+        } finally {
+            FileUtil.del(recoverTemporaryPath);
+        }
+
+
+        return null;
+    }
+
+    private Map<String, Object> packageReturn(String cacheId, List<String> executeReturn) {
+        Map<String, Object> map = new HashMap<>(2);
+        map.put("cacheId", cacheId);
+        map.put("rows", executeReturn);
+        return map;
+    }
+
+
 }
