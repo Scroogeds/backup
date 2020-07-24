@@ -31,6 +31,6 @@ public class InitJavaCronTypeConfigRunner implements IBackupApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        //backupService.initEnableCron();
+        backupService.initEnableCron();
     }
 }
