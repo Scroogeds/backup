@@ -9,7 +9,8 @@
         <result column="update_date" jdbcType="CHAR" property="updateDate" />
         <result column="describe" jdbcType="VARCHAR" property="describe" />
         <result column="cron_expr" jdbcType="VARCHAR" property="cronExpr" />
-        <result column="cron_type" jdbcType="CHAR" property="cronType" />
+        <!--<result column="cron_type" jdbcType="CHAR" property="cronType" />-->
+        <result column="enable" jdbcType="CHAR" property="enable" />
         <!--<result column="shell_commands" jdbcType="VARCHAR" property="shellCommands" />
         <result column="backup_paths" jdbcType="VARCHAR" property="backupPaths" />-->
     </resultMap>
@@ -18,9 +19,19 @@
         select * from backup_config order by create_date desc
     </select>
 
-    <select id="queryJavaCron" parameterType="string" resultMap="backupConfigResultMap">
-        select * from backup_config where cron_type = #{cronType} order by create_date desc
+    <select id="queryEnable" parameterType="string" resultMap="backupConfigResultMap">
+        select * from backup_config where enable = #{enable} order by create_date desc
     </select>
+
+    <update id="modifyBackupConfigEnable">
+        update backup_config
+        set enable = #{enable}
+        where code = #{code}
+    </update>
+
+    <!--<select id="queryJavaCron" parameterType="string" resultMap="backupConfigResultMap">
+        select * from backup_config where cron_type = #{cronType} order by create_date desc
+    </select>-->
 
     <select id="queryByPage" resultMap="backupConfigResultMap">
         select * from backup_config order by create_date desc
@@ -31,14 +42,14 @@
     </select>
 
     <insert id="insertBackupConfig" parameterType="com.leateck.gmp.backup.core.entity.BackupConfig">
-        insert into backup_config(code, row_id, create_date, `describe`, cron_expr, cron_type)
+        insert into backup_config(code, row_id, create_date, `describe`, cron_expr, enable)
             values(
                 #{backupConfig.code},
                 #{backupConfig.rowId},
                 #{backupConfig.createDate},
                 #{backupConfig.describe},
                 #{backupConfig.cronExpr},
-                #{backupConfig.cronType}
+                #{backupConfig.enable}
             )
     </insert>
 
@@ -47,8 +58,8 @@
         <trim prefix="set" suffixOverrides=",">
             <if test="backupConfig.describe!=null">`describe` = #{backupConfig.describe},</if>
             <if test="backupConfig.cronExpr!=null">cron_expr = #{backupConfig.cronExpr},</if>
-            <if test="backupConfig.cronType!=null">cron_type = #{backupConfig.cronType},</if>
             <if test="backupConfig.updateDate!=null">update_date = #{backupConfig.updateDate},</if>
+            <if test="backupConfig.enable!=null">enable = #{backupConfig.enable},</if>
         </trim>
         where code = #{backupConfig.code}
     </update>

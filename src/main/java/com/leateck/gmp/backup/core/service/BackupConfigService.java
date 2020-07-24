@@ -13,7 +13,6 @@ import com.leateck.gmp.backup.page.PageData;
 import com.leateck.gmp.backup.page.SearchParamWrapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -35,16 +34,18 @@ import java.util.List;
 @Service
 public class BackupConfigService extends BaseService<BackupConfigMapper, BackupConfig> implements IBackupConfigService {
 
-    private String cronType;
+    /*private String cronType;
 
     @Value("${gmp-backup.cronType}")
     public void setCronType(String cronType) {
         this.cronType = cronType;
-    }
+    }*/
 
     private BackupConfigMapper backupConfigMapper;
 
     private IBackupServerService backupServerService;
+
+    private IBackupService backupService;
 
     @Autowired
     public void setBackupConfigMapper(BackupConfigMapper backupConfigMapper) {
@@ -54,6 +55,11 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
     @Autowired
     public void setBackupServerService(IBackupServerService backupServerService) {
         this.backupServerService = backupServerService;
+    }
+
+    @Autowired
+    public void setBackupService(IBackupService backupService) {
+        this.backupService = backupService;
     }
 
     @Override
@@ -109,9 +115,10 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
         BeanUtils.copyProperties(backupConfigVo, backupConfig);
         String code = IdUtil.simpleUUID();
         backupConfig.setCode(code);
-        backupConfig.setCronType(cronType);
+        //backupConfig.setCronType(cronType);
         if (backupConfigMapper.insertBackupConfig(backupConfig) > 0) {
             backupServerService.addBackupServer(code, sourceServers, targetServers);
+            backupService.buildCron(code);
         }
         return new Result<>(backupConfigVo);
     }
@@ -125,11 +132,12 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
         }
         BackupConfig backupConfig = new BackupConfig();
         BeanUtils.copyProperties(backupConfigVo, backupConfig);
-        backupConfig.setCronType(cronType);
+        //backupConfig.setCronType(cronType);
         if (backupConfigMapper.modifyBackupConfigByCode(backupConfig) > 0) {
             String code = backupConfig.getCode();
             backupServerService.deleteByConfigCode(code);
             backupServerService.addBackupServer(code, sourceServers, targetServers);
+            backupService.buildCron(code);
         }
         return new Result<>(backupConfigVo);
     }
@@ -138,6 +146,7 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
     public Result<String> deleteByCode(String code) {
         if (backupConfigMapper.deleteByCode(code) > 0) {
             backupServerService.deleteByConfigCode(code);
+            backupService.removeCron(code);
         }
         return new Result<>(code);
     }

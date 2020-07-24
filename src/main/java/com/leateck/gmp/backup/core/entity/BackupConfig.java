@@ -45,7 +45,13 @@ public class BackupConfig extends BaseData{
     /**
      * cron支持的方式 0-linux 1-java
      */
-    @ApiModelProperty(value = "cron支持的方式 0-linux 1-java")
-    private String cronType = BackupConstant.DEFAULT_CORN_EXPR_TYPE;
+    /*@ApiModelProperty(value = "cron支持的方式 0-linux 1-java")
+    private String cronType = BackupConstant.DEFAULT_CORN_EXPR_TYPE;*/
+
+    /**
+     * 是否启用 0-否 1-是
+     */
+    @ApiModelProperty(value = "是否启用 0-否 1-是")
+    private String enable = BackupConstant.BACKUP_OPEN;
 
 }

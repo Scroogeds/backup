@@ -54,4 +54,10 @@ public class BackupConstant {
     public final static int SEARCH_DEFAULT_PAGE_SIZE = 10;
 
     public final static int DEFAULT_SAVE_DAY_NUM = 30;
+
+    /**
+     * 备份是否开启
+     */
+    public final static String BACKUP_OPEN = "1";
+    public final static String BACKUP_CLOSE = "0";
 }

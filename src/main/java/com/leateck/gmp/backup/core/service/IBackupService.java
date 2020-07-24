@@ -29,7 +29,7 @@ public interface IBackupService {
 
     Result<String> removeCron(String code);
 
-    void initJavaCron();
+    void initEnableCron();
 
     Result<List<String>> queryDirFile(RecoverConfig recoverConfig);
 

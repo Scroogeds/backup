@@ -262,8 +262,13 @@ public class BackupService implements IBackupService {
                         Sftp sftp = new Sftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
                                 sourceServer.getUsername(), sourceServer.getPassword());
                         for (String sourcePath : sourcePaths) {
-                            //下载远程文件
-                            sftp.download(sourcePath, FileUtil.file(sourceCopyPath));
+                            String[] split = sourcePath.split("##");
+                            if (split.length == 2 && split[2].equals("d")) {
+                                sftp.recursiveDownloadFolder(sourcePath, FileUtil.file(sourceCopyPath));
+                            } else {
+                                //下载远程文件
+                                sftp.download(sourcePath, FileUtil.file(sourceCopyPath));
+                            }
                         }
                     } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(sourceServer.getConnectType())) {
                         String sourceCopyPath = cacheFilePath + File.separator + sourceServer.getAddress();
@@ -272,8 +277,13 @@ public class BackupService implements IBackupService {
                         Ftp ftp = new Ftp(sourceServer.getAddress(), Integer.valueOf(sourceServer.getPort()),
                                 sourceServer.getUsername(), sourceServer.getPassword());
                         for (String sourcePath : sourcePaths) {
-                            //下载远程文件
-                            ftp.download(sourcePath, FileUtil.file(sourceCopyPath));
+                            String[] split = sourcePath.split("##");
+                            if (split.length == 2 && split[2].equals("d")) {
+                                ftp.recursiveDownloadFolder(sourcePath, FileUtil.file(sourceCopyPath));
+                            } else {
+                                //下载远程文件
+                                ftp.download(sourcePath, FileUtil.file(sourceCopyPath));
+                            }
                         }
                     }
                 }
@@ -359,28 +369,34 @@ public class BackupService implements IBackupService {
     @Override
     public Result<String> buildCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
+        String exec = code;
         if (null != backupConfig) {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 /*throw new BackupException(100003, "配置类型不正确，不能加入Linux系统定时任务", code);*/
                 String filename = getShellFilename(code);
                 File file = new File(filename);
-                if (!file.exists()) {
+                /*if (!file.exists()) {
                     buildShellFile(code, file);
                     RuntimeUtil.execForStr("chmod 744 " + filename);
-                }
-                String exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
+                }*/
+                buildShellFile(code, file);
+                RuntimeUtil.execForStr("chmod 744 " + filename);
+
+                RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
+                exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
                         filename + "\" >> /var/spool/cron/root");
-                return new Result<>(exec);
             } else {
                 CronUtil.remove(code);
                 CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
                 // 支持秒级别定时任务
                 //CronUtil.setMatchSecond(true);
-                CronUtil.start();
+                //CronUtil.start();
             }
-
+            if (BackupConstant.BACKUP_CLOSE.equals(backupConfig.getEnable())) {
+                backupConfigMapper.modifyBackupConfigEnable(code, BackupConstant.BACKUP_OPEN);
+            }
         }
-        return new Result<>(code);
+        return new Result<>(exec);
     }
 
     @Override
@@ -390,19 +406,20 @@ public class BackupService implements IBackupService {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 /*throw new BackupException(100004, "配置类型不正确，不能删除Linux系统定时任务", code);*/
                 String filename = getShellFilename(code);
-                String exec = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
-                return new Result<>(exec);
+                code = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
             } else {
                 CronUtil.remove(code);
             }
-
+            if (BackupConstant.BACKUP_OPEN.equals(backupConfig.getEnable())) {
+                backupConfigMapper.modifyBackupConfigEnable(code, BackupConstant.BACKUP_CLOSE);
+            }
         }
         return new Result<>(code);
     }
 
     /**
      *
-     * Describe: 项目初始化时加载所有的javaCronType的配置
+     * Describe: 项目初始化时加载所有的开启的配置
      *
      * @param
      * @exception
@@ -410,16 +427,25 @@ public class BackupService implements IBackupService {
      * @date: 2020-07-20 18:04
      */
     @Override
-    public void initJavaCron() {
-        List<BackupConfig> backupConfigs = backupConfigMapper.queryJavaCron(BackupConstant.DEFAULT_CORN_EXPR_TYPE_JAVA);
+    public void initEnableCron() {
+        List<BackupConfig> backupConfigs = backupConfigMapper.queryEnable(BackupConstant.BACKUP_OPEN);
         if (!CollectionUtils.isEmpty(backupConfigs)) {
-            for (BackupConfig backupConfig : backupConfigs) {
-                String code = backupConfig.getCode();
-                CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                for (BackupConfig backupConfig : backupConfigs) {
+                    String filename = getShellFilename(backupConfig.getCode());
+                    RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
+                    RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
+                            filename + "\" >> /var/spool/cron/root");
+                }
+            } else {
+                for (BackupConfig backupConfig : backupConfigs) {
+                    String code = backupConfig.getCode();
+                    CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
+                }
+                // 支持秒级别定时任务
+                //CronUtil.setMatchSecond(true);
+                CronUtil.start();
             }
-            // 支持秒级别定时任务
-            //CronUtil.setMatchSecond(true);
-            CronUtil.start();
         }
     }
 

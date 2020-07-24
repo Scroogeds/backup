@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS backup_config (
 	code CHAR(32)  PRIMARY KEY,
     describe TEXT,
     cron_expr VARCHAR(32),
-    cron_type CHAR(1),
+    enable CHAR(1),
 	create_date CHAR(19),
 	update_date CHAR(19)
 );

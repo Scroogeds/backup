@@ -1,5 +1,6 @@
 package com.leateck.gmp.backup.core.vo;
 
+import com.leateck.gmp.backup.constant.BackupConstant;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -41,6 +42,6 @@ public class RecoverConfig implements Serializable {
      */
     private String password;
 
-    private String port;
+    private String port = BackupConstant.DEFAULT_SORT;
 
 }

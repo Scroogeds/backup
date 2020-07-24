@@ -23,7 +23,11 @@ public interface BackupConfigMapper extends BaseMapper<BackupConfig> {
 
     List<BackupConfig> queryAll();
 
-    List<BackupConfig> queryJavaCron(@Param("cronType") String cronType);
+    List<BackupConfig> queryEnable(@Param("enable") String enable);
+
+    int modifyBackupConfigEnable(@Param("code") String code, @Param("enable") String enable);
+
+    /*List<BackupConfig> queryJavaCron(@Param("cronType") String cronType);*/
 
     BackupConfig queryByCode(@Param("code") String code);
 
