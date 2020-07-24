@@ -3,6 +3,7 @@ package com.leateck.gmp.backup.core.service;
 import com.leateck.gmp.backup.base.entity.Result;
 import com.leateck.gmp.backup.core.vo.RecoverConfig;
 import com.leateck.gmp.backup.core.vo.RecoverConfigVo;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.List;
@@ -35,5 +36,7 @@ public interface IBackupService {
     InputStream downFile(RecoverConfig recoverConfig, String filename);
 
     Result<String> uploadFile(String filename, RecoverConfigVo recoverConfigVo);
+
+    Result<String> uploadFile(MultipartFile file, RecoverConfig recoverConfig);
 
 }

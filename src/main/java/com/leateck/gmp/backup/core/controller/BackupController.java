@@ -8,6 +8,7 @@ import com.leateck.gmp.backup.core.vo.RecoverConfigVo;
 import com.leateck.gmp.backup.utils.IoUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -75,6 +76,12 @@ public class BackupController {
     public Result<String> downFile(@RequestParam("filename") String filename,
                          @RequestBody RecoverConfigVo recoverConfigVo) {
         return backupService.uploadFile(filename, recoverConfigVo);
+    }
+
+    @PostMapping("upload/file")
+    public Result<String> downFile(@RequestParam("file") MultipartFile file,
+                                   @RequestBody RecoverConfig recoverConfig) {
+        return backupService.uploadFile(file, recoverConfig);
     }
 
     /**

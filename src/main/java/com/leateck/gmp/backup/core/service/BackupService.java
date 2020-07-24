@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.time.LocalDateTime;
@@ -562,11 +563,8 @@ public class BackupService implements IBackupService {
     @Override
     public Result<String> uploadFile(String filename, RecoverConfigVo recoverConfigVo) {
 
-        RecoverConfig recoverConfig = recoverConfigVo.getTargetRecover();
-        if (null == recoverConfig) {
-            throw new BackupException(100006, "服务器配置不能为空", "");
-        }
-        String targetRecoverDir = recoverConfig.getRecoverDir();
+        ServerConfig targetServerConfig = getServerConfig(recoverConfigVo.getTargetRecover());
+        String targetRecoverDir = targetServerConfig.getRecoverDir();
         if (StringUtils.isEmpty(targetRecoverDir)) {
             throw new BackupException(100005, "上传的路径配置不能为空", targetRecoverDir);
         }
@@ -576,101 +574,157 @@ public class BackupService implements IBackupService {
         }*/
 
         /*ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);*/
-        ServerConfig serverConfig = getServerConfig(recoverConfigVo.getSourceRecover());
+        ServerConfig sourceServerConfig = getServerConfig(recoverConfigVo.getSourceRecover());
         /*if (null == serverConfig) {
             throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
         }*/
 
-        String sourceRecoverDir = serverConfig.getRecoverDir();
+        String sourceRecoverDir = sourceServerConfig.getRecoverDir();
 
         String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
         FileUtil.mkdir(recoverTemporaryPath);
 
         try {
-            if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 if (!sourceRecoverDir.endsWith(File.separator)) {
                     sourceRecoverDir = sourceRecoverDir + File.separator;
                 }
-                FileUtil.copy(sourceRecoverDir + filename, recoverTemporaryPath, true);
-            } else {
-                if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
-                    if (!sourceRecoverDir.endsWith(File.separator)) {
-                        sourceRecoverDir = sourceRecoverDir + File.separator;
-                    }
-                    RuntimeUtil.execForStr("sshpass -p " + serverConfig.getPassword() +
-                                    " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
-                                    " " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
-                                    ":" + sourceRecoverDir + filename + " " + recoverTemporaryPath);
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(sourceServerConfig.getConnectType())) {
+                    FileUtil.copy(sourceRecoverDir + filename, recoverTemporaryPath, true);
                 } else {
-                    if (!sourceRecoverDir.endsWith("/")) {
-                        sourceRecoverDir = sourceRecoverDir + "/";
-                    }
-                    if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(serverConfig.getConnectType())) {
-                        //登录（帐号密码的SSH服务器）
-                        Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
-                                serverConfig.getUsername(), serverConfig.getPassword());
-                        //下载远程文件
-                        sftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
-                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(serverConfig.getConnectType())) {
-                        //登录（帐号密码的FTP服务器）
-                        Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
-                                serverConfig.getUsername(), serverConfig.getPassword());
-                        //下载远程文件
-                        ftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
-                    }
+                    RuntimeUtil.execForStr("sshpass -p " + sourceServerConfig.getPassword() +
+                            " scp -o StrictHostKeyChecking=no -P " + sourceServerConfig.getPort() +
+                            " " + sourceServerConfig.getUsername() + "@" + sourceServerConfig.getAddress() +
+                            ":" + sourceRecoverDir + filename + " " + recoverTemporaryPath);
+                }
+            } else {
+                if (!sourceRecoverDir.endsWith("/")) {
+                    sourceRecoverDir = sourceRecoverDir + "/";
+                }
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(sourceServerConfig.getConnectType())) {
+                    FileUtil.copy(sourceRecoverDir + filename, recoverTemporaryPath, true);
+                } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(sourceServerConfig.getConnectType())) {
+                    //登录（帐号密码的SSH服务器）
+                    Sftp sftp = new Sftp(sourceServerConfig.getAddress(), Integer.valueOf(sourceServerConfig.getPort()),
+                            sourceServerConfig.getUsername(), sourceServerConfig.getPassword());
+                    //下载远程文件
+                    sftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
+                } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(sourceServerConfig.getConnectType())) {
+                    //登录（帐号密码的FTP服务器）
+                    Ftp ftp = new Ftp(sourceServerConfig.getAddress(), Integer.valueOf(sourceServerConfig.getPort()),
+                            sourceServerConfig.getUsername(), sourceServerConfig.getPassword());
+                    //下载远程文件
+                    ftp.download(sourceRecoverDir + filename, FileUtil.file(recoverTemporaryPath));
                 }
             }
 
-            if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(recoverConfig.getConnectType())) {
-                FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
-            } else {
-                String serverCode = recoverConfig.getServerCode();
-                String address = recoverConfig.getAddress();
-                String password = recoverConfig.getPassword();
-                String username = recoverConfig.getUsername();
-                String port = recoverConfig.getPort();
-                String connectType = recoverConfig.getConnectType();
-
-                if (!StringUtils.isEmpty(serverCode)) {
-                    BackupServer backupServer = backupServerService.queryByRowId(serverCode);
-                    if (null != backupServer) {
-                        if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(backupServer.getConnectType())) {
-                            FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
-                        } else {
-                            address = backupServer.getAddress();
-                            password = backupServer.getPassword();
-                            username = backupServer.getUsername();
-                            port = backupServer.getPort();
-                            connectType = backupServer.getConnectType();
-                        }
-                    }
-                }
-
-                if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+            String targetConnectType = targetServerConfig.getConnectType();
+            String password = targetServerConfig.getPassword();
+            String address = targetServerConfig.getAddress();
+            String username = targetServerConfig.getUsername();
+            String port = targetServerConfig.getPort();
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(targetConnectType)) {
+                    FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
+                } else {
                     RuntimeUtil.execForStr("sshpass -p " + password + " scp -o StrictHostKeyChecking=no -P " + port +
-                                    " " + recoverTemporaryPath + File.separator + filename + " " +
-                                    username + "@" + address +
-                                    ":" + targetRecoverDir);
-                } else {
-                    if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(connectType)) {
-                        //登录（帐号密码的SSH服务器）
-                        Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
-                                serverConfig.getUsername(), serverConfig.getPassword());
-                        //上传本地文件
-                        sftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
-                    } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(connectType)) {
-                        //登录（帐号密码的FTP服务器）
-                        Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
-                                serverConfig.getUsername(), serverConfig.getPassword());
-                        //上传本地文件
-                        ftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
-                    }
+                            " " + recoverTemporaryPath + File.separator + filename + " " +
+                            username + "@" + address +
+                            ":" + targetRecoverDir);
+                }
+            } else {
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(targetConnectType)) {
+                    FileUtil.copy(recoverTemporaryPath + File.separator + filename, targetRecoverDir, true);
+                } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(targetConnectType)) {
+                    //登录（帐号密码的SSH服务器）
+                    Sftp sftp = new Sftp(address, Integer.valueOf(port),
+                            username, password);
+                    //上传本地文件
+                    sftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
+                } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(targetConnectType)) {
+                    //登录（帐号密码的FTP服务器）
+                    Ftp ftp = new Ftp(address, Integer.valueOf(port),
+                            username, password);
+                    //上传本地文件
+                    ftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + filename));
                 }
             }
+
         } finally {
             FileUtil.del(recoverTemporaryPath);
         }
 
+
+        return new Result<>("");
+    }
+
+    @Override
+    public Result<String> uploadFile(MultipartFile file, RecoverConfig recoverConfig) {
+
+        ServerConfig serverConfig = getServerConfig(recoverConfig);
+
+        String targetRecoverDir = serverConfig.getRecoverDir();
+
+        if (StringUtils.isEmpty(targetRecoverDir)) {
+            throw new BackupException(100005, "上传的路径配置不能为空", targetRecoverDir);
+        }
+
+        try (InputStream inputStream = file.getInputStream()){
+            String name = file.getName();
+
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                    if (!targetRecoverDir.endsWith(File.separator)) {
+                        targetRecoverDir = targetRecoverDir + File.separator;
+                    }
+                    FileUtil.writeFromStream(inputStream, targetRecoverDir + name);
+                } else {
+                    String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
+                    FileUtil.mkdir(recoverTemporaryPath);
+                    FileUtil.writeFromStream(inputStream, recoverTemporaryPath + File.separator + name);
+                    try {
+                        RuntimeUtil.execForStr("sshpass -p " + serverConfig.getPassword() +
+                                " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
+                                " " + recoverTemporaryPath + File.separator + name + " " +
+                                serverConfig.getUsername() + "@" + serverConfig.getAddress() +
+                                ":" + targetRecoverDir);
+                    } finally {
+                        FileUtil.del(recoverTemporaryPath);
+                    }
+                }
+            } else {
+                if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                    if (!targetRecoverDir.endsWith(File.separator)) {
+                        targetRecoverDir = targetRecoverDir + File.separator;
+                    }
+                    FileUtil.writeFromStream(inputStream, targetRecoverDir + name);
+                } else {
+                    String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
+                    FileUtil.mkdir(recoverTemporaryPath);
+                    FileUtil.writeFromStream(inputStream, recoverTemporaryPath + File.separator + name);
+                    try {
+                        if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                            //登录（帐号密码的SSH服务器）
+                            Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                    serverConfig.getUsername(), serverConfig.getPassword());
+                            //上传本地文件
+                            sftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + name));
+                        } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                            //登录（帐号密码的FTP服务器）
+                            Ftp ftp = new Ftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),
+                                    serverConfig.getUsername(), serverConfig.getPassword());
+                            //上传本地文件
+                            ftp.upload(targetRecoverDir, FileUtil.file(recoverTemporaryPath + File.separator + name));
+                        }
+                    } finally {
+                        FileUtil.del(recoverTemporaryPath);
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return new Result<>("");
     }
