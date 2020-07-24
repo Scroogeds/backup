@@ -19,6 +19,7 @@ import com.leateck.gmp.backup.core.mapper.BackupConfigMapper;
 import com.leateck.gmp.backup.core.vo.RecoverConfig;
 import com.leateck.gmp.backup.core.vo.ServerConfig;
 import com.leateck.gmp.backup.exception.BackupException;
+import com.leateck.gmp.backup.utils.IoUtils;
 import com.leateck.gmp.backup.utils.RemoteRuntimeUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -204,12 +205,22 @@ public class BackupService implements IBackupService {
                                             "-r backup-$tmpDate.tar.gz " + username + "@" + address +
                                             ":" + path);
                                     bufferedWriter.newLine();
+                                    bufferedWriter.write("sshpass -p "+ password +
+                                            " ssh -P " + port + " " + username + "@" + address +
+                                            "\"find "+ path +" -mtime +" + targetServer.getSaveDayNum() +
+                                            " -name \"backup-*.tar.gz\" -exec rm -rf {} \\\"");
+                                    bufferedWriter.newLine();
                                 }
                             } else {
                                 bufferedWriter.write("sshpass -p "+ password +
                                         " scp -o StrictHostKeyChecking=no -P " + port +
                                         "-r backup-$tmpDate.tar.gz " + username + "@" + address +
                                         ":" + filepath);
+                                bufferedWriter.newLine();
+                                bufferedWriter.write("sshpass -p "+ password +
+                                        " ssh -P " + port + " " + username + "@" + address +
+                                        "\"find "+ filepath +" -mtime +" + targetServer.getSaveDayNum() +
+                                        " -name \"backup-*.tar.gz\" -exec rm -rf {} \\\"");
                                 bufferedWriter.newLine();
                             }
 
@@ -281,25 +292,39 @@ public class BackupService implements IBackupService {
                     if (!StringUtils.isEmpty(filepath)) {
                         String[] targetPaths = filepath.split(",");
                         if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(targetServer.getConnectType())) {
+                            long nowCurrentTimeMillis = System.currentTimeMillis();
+                            int saveDayNum = targetServer.getSaveDayNum();
                             for (String targetPath : targetPaths) {
                                 FileUtil.copy(fileCompressName, targetPath, true);
+                                IoUtils.deleteOverTimeFile(nowCurrentTimeMillis, new File(targetPath), saveDayNum);
                             }
-                        } else if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(targetServer.getConnectType())){
-                            //登录（帐号密码的SSH服务器）
-                            Sftp sftp = new Sftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
-                                    targetServer.getUsername(), targetServer.getPassword());
-                            for (String targetPath : targetPaths) {
-                                //上传本地文件
-                                sftp.upload(targetPath, FileUtil.file(fileCompressName));
+                        } else {
+                            if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(targetServer.getConnectType())){
+                                //登录（帐号密码的SSH服务器）
+                                Sftp sftp = new Sftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
+                                        targetServer.getUsername(), targetServer.getPassword());
+                                for (String targetPath : targetPaths) {
+                                    //上传本地文件
+                                    sftp.upload(targetPath, FileUtil.file(fileCompressName));
+                                }
+                            } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(targetServer.getConnectType())) {
+                                //登录（帐号密码的FTP服务器）
+                                Ftp ftp = new Ftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
+                                        targetServer.getUsername(), targetServer.getPassword());
+                                for (String targetPath : targetPaths) {
+                                    //上传本地文件
+                                    ftp.upload(targetPath, FileUtil.file(fileCompressName));
+                                }
                             }
-                        } else if (BackupConstant.CONNECT_FTP_TYPE_VAR.equals(targetServer.getConnectType())) {
-                            //登录（帐号密码的FTP服务器）
-                            Ftp ftp = new Ftp(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
-                                    targetServer.getUsername(), targetServer.getPassword());
-                            for (String targetPath : targetPaths) {
-                                //上传本地文件
-                                ftp.upload(targetPath, FileUtil.file(fileCompressName));
+                            String[] rmDirCmds = new String[targetPaths.length];
+                            int saveDayNum = targetServer.getSaveDayNum();
+                            //删除超过日期的备份文件
+                            for (int i = 0; i < targetPaths.length; i++) {
+                                rmDirCmds[i] = "find "+ targetPaths[i] +" -mtime +" + saveDayNum +
+                                        " -name \"backup-*.zip\" -exec rm -rf {} \\";
                             }
+                            RemoteRuntimeUtil.execForLines(targetServer.getAddress(), Integer.valueOf(targetServer.getPort()),
+                                    targetServer.getUsername(), targetServer.getPassword(), rmDirCmds);
                         }
                     }
                 }
@@ -416,7 +441,11 @@ public class BackupService implements IBackupService {
         recoverConfigTimedCache.put(cacheId, serverConfig);
 
         if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(recoverConfig.getConnectType())) {
-            return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+            } else {
+                return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("dir " + recoverDir)));
+            }
         } else {
             String serverCode = recoverConfig.getServerCode();
             String address = recoverConfig.getAddress();
@@ -462,15 +491,21 @@ public class BackupService implements IBackupService {
         }
 
         String recoverDir = serverConfig.getRecoverDir();
-        if (!recoverDir.endsWith(File.separator)) {
+        /*if (!recoverDir.endsWith(File.separator)) {
             recoverDir = recoverDir + File.separator;
-        }
+        }*/
 
         if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+            if (!recoverDir.endsWith(File.separator)) {
+                recoverDir = recoverDir + File.separator;
+            }
             FileReader fileReader = new FileReader(recoverDir + filename);
             return fileReader.getInputStream();
         } else {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                if (!recoverDir.endsWith(File.separator)) {
+                    recoverDir = recoverDir + File.separator;
+                }
                 try {
                     RuntimeUtil.execForStr("cd " + baseShellPath, "mkdir recoverTemporary",
                             "sshpass -p " + serverConfig.getPassword() +
@@ -484,6 +519,9 @@ public class BackupService implements IBackupService {
                     RuntimeUtil.execForStr("rm -rf recoverTemporary");
                 }
             } else {
+                if (!recoverDir.endsWith("/")) {
+                    recoverDir = recoverDir + "/";
+                }
                 String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
                 try {
                     FileUtil.mkdir(recoverTemporaryPath);
@@ -532,23 +570,29 @@ public class BackupService implements IBackupService {
         }
 
         String sourceRecoverDir = serverConfig.getRecoverDir();
-        if (!sourceRecoverDir.endsWith(File.separator)) {
-            sourceRecoverDir = sourceRecoverDir + File.separator;
-        }
 
         String recoverTemporaryPath = baseShellPath + File.separator + "recoverTemporary";
         FileUtil.mkdir(recoverTemporaryPath);
 
         try {
             if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {
+                if (!sourceRecoverDir.endsWith(File.separator)) {
+                    sourceRecoverDir = sourceRecoverDir + File.separator;
+                }
                 FileUtil.copy(sourceRecoverDir + filename, recoverTemporaryPath, true);
             } else {
                 if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                    if (!sourceRecoverDir.endsWith(File.separator)) {
+                        sourceRecoverDir = sourceRecoverDir + File.separator;
+                    }
                     RuntimeUtil.execForStr("sshpass -p " + serverConfig.getPassword() +
                                     " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
                                     " " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
                                     ":" + sourceRecoverDir + filename + " " + recoverTemporaryPath);
                 } else {
+                    if (!sourceRecoverDir.endsWith("/")) {
+                        sourceRecoverDir = sourceRecoverDir + "/";
+                    }
                     if (BackupConstant.DEFAULT_SSH_TYPE_VAR.equals(serverConfig.getConnectType())) {
                         //登录（帐号密码的SSH服务器）
                         Sftp sftp = new Sftp(serverConfig.getAddress(), Integer.valueOf(serverConfig.getPort()),

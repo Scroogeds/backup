@@ -78,7 +78,7 @@ public class BackupServer extends BaseData {
     /**
      * 保存天数 -1不删除
      */
-    @ApiModelProperty(value = "保存天数 -1不删除")
-    private int saveDayNum = -1;
+    @ApiModelProperty(value = "保存天数 默认30天")
+    private int saveDayNum = BackupConstant.DEFAULT_SAVE_DAY_NUM;
 
 }

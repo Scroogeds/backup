@@ -52,4 +52,6 @@ public class BackupConstant {
      */
     public final static int SEARCH_DEFAULT_PAGE_NUM = 1;
     public final static int SEARCH_DEFAULT_PAGE_SIZE = 10;
+
+    public final static int DEFAULT_SAVE_DAY_NUM = 30;
 }
