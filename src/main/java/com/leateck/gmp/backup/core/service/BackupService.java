@@ -1,11 +1,8 @@
 package com.leateck.gmp.backup.core.service;
 
-import cn.hutool.cache.CacheUtil;
-import cn.hutool.cache.impl.TimedCache;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileReader;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.cron.CronUtil;
@@ -17,6 +14,7 @@ import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.entity.BackupServer;
 import com.leateck.gmp.backup.core.mapper.BackupConfigMapper;
 import com.leateck.gmp.backup.core.vo.RecoverConfig;
+import com.leateck.gmp.backup.core.vo.RecoverConfigVo;
 import com.leateck.gmp.backup.core.vo.ServerConfig;
 import com.leateck.gmp.backup.exception.BackupException;
 import com.leateck.gmp.backup.utils.IoUtils;
@@ -80,12 +78,12 @@ public class BackupService implements IBackupService {
     /**
      * 过期时间 5分钟
      */
-    private static final long EXPIRE_TIME = 1000 * 60 * 5;
+    //private static final long EXPIRE_TIME = 1000 * 60 * 5;
 
     /**
      * 带过期时间的集合
      */
-    TimedCache<String, ServerConfig> recoverConfigTimedCache = CacheUtil.newTimedCache(EXPIRE_TIME);
+    //TimedCache<String, ServerConfig> recoverConfigTimedCache = CacheUtil.newTimedCache(EXPIRE_TIME);
 
     @Override
     public Result<String> buildShell(String code) {
@@ -430,21 +428,21 @@ public class BackupService implements IBackupService {
      * @return
      */
     @Override
-    public Result<Map<String, Object>> queryDirFile(RecoverConfig recoverConfig) {
+    public Result<List<String>> queryDirFile(RecoverConfig recoverConfig) {
         String recoverDir = recoverConfig.getRecoverDir();
         if (StringUtils.isEmpty(recoverDir)) {
             throw new BackupException(100003, "恢复的路径配置不能为空", Collections.emptyList());
         }
-        String cacheId = IdUtil.simpleUUID();
+        /*String cacheId = IdUtil.simpleUUID();
         ServerConfig serverConfig = new ServerConfig();
-        BeanUtils.copyProperties(recoverConfig, serverConfig);
-        recoverConfigTimedCache.put(cacheId, serverConfig);
+        BeanUtils.copyProperties(recoverConfig, serverConfig);*/
+        //recoverConfigTimedCache.put(cacheId, serverConfig);
 
         if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(recoverConfig.getConnectType())) {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
-                return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+                return new Result<>(RuntimeUtil.execForLines("ls " + recoverDir));
             } else {
-                return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("dir " + recoverDir)));
+                return new Result<>(RuntimeUtil.execForLines("dir " + recoverDir));
             }
         } else {
             String serverCode = recoverConfig.getServerCode();
@@ -456,10 +454,10 @@ public class BackupService implements IBackupService {
             if (!StringUtils.isEmpty(serverCode)) {
                 BackupServer backupServer = backupServerService.queryByRowId(serverCode);
                 if (null != backupServer) {
-                    BeanUtils.copyProperties(backupServer, serverConfig);
-                    recoverConfigTimedCache.put(cacheId, serverConfig);
+                    //BeanUtils.copyProperties(backupServer, serverConfig);
+                    //recoverConfigTimedCache.put(cacheId, serverConfig);
                     if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(backupServer.getConnectType())) {
-                        return new Result<>(packageReturn(cacheId, RuntimeUtil.execForLines("ls " + recoverDir)));
+                        return new Result<>(RuntimeUtil.execForLines("ls " + recoverDir));
                     } else {
                         address = backupServer.getAddress();
                         password = backupServer.getPassword();
@@ -473,22 +471,31 @@ public class BackupService implements IBackupService {
             } else {
 
             }*/
-            return new Result<>(packageReturn(cacheId, RemoteRuntimeUtil
-                    .execForLines(address, Integer.valueOf(port), username, password, "ls " + recoverDir)));
+            return new Result<>(RemoteRuntimeUtil
+                    .execForLines(address, Integer.valueOf(port), username, password, "ls " + recoverDir));
         }
     }
 
+    private ServerConfig getServerConfig(RecoverConfig recoverConfig) {
+        if (null == recoverConfig) {
+            throw new BackupException(100006, "服务器配置不能为空", "");
+        }
+        ServerConfig serverConfig = new ServerConfig();
+        BeanUtils.copyProperties(recoverConfig, serverConfig);
+        String serverCode = recoverConfig.getServerCode();
+        if (!StringUtils.isEmpty(serverCode)) {
+            BackupServer backupServer = backupServerService.queryByRowId(serverCode);
+            if (null != backupServer) {
+                BeanUtils.copyProperties(backupServer, serverConfig);
+            }
+        }
+        return serverConfig;
+    }
+
     @Override
-    public InputStream downFile(String cacheId, String filename) {
+    public InputStream downFile(RecoverConfig recoverConfig, String filename) {
 
-        if (!recoverConfigTimedCache.containsKey(cacheId)) {
-            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
-        }
-
-        ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);
-        if (null == serverConfig) {
-            throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
-        }
+        ServerConfig serverConfig = getServerConfig(recoverConfig);
 
         String recoverDir = serverConfig.getRecoverDir();
         /*if (!recoverDir.endsWith(File.separator)) {
@@ -553,21 +560,26 @@ public class BackupService implements IBackupService {
     }
 
     @Override
-    public Result<String> uploadFile(String cacheId, String filename, RecoverConfig recoverConfig) {
+    public Result<String> uploadFile(String filename, RecoverConfigVo recoverConfigVo) {
 
+        RecoverConfig recoverConfig = recoverConfigVo.getTargetRecover();
+        if (null == recoverConfig) {
+            throw new BackupException(100006, "服务器配置不能为空", "");
+        }
         String targetRecoverDir = recoverConfig.getRecoverDir();
         if (StringUtils.isEmpty(targetRecoverDir)) {
             throw new BackupException(100005, "上传的路径配置不能为空", targetRecoverDir);
         }
 
-        if (!recoverConfigTimedCache.containsKey(cacheId)) {
+        /*if (!recoverConfigTimedCache.containsKey(cacheId)) {
             throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
-        }
+        }*/
 
-        ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);
-        if (null == serverConfig) {
+        /*ServerConfig serverConfig = recoverConfigTimedCache.get(cacheId);*/
+        ServerConfig serverConfig = getServerConfig(recoverConfigVo.getSourceRecover());
+        /*if (null == serverConfig) {
             throw new BackupException(100004, "操作间隔时间超过5分钟，已经失效", null);
-        }
+        }*/
 
         String sourceRecoverDir = serverConfig.getRecoverDir();
 
@@ -660,7 +672,7 @@ public class BackupService implements IBackupService {
         }
 
 
-        return null;
+        return new Result<>("");
     }
 
     private Map<String, Object> packageReturn(String cacheId, List<String> executeReturn) {
