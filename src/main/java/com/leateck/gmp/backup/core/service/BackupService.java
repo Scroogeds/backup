@@ -2,6 +2,8 @@ package com.leateck.gmp.backup.core.service;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IORuntimeException;
+import cn.hutool.core.io.file.FileAppender;
 import cn.hutool.core.io.file.FileReader;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.ZipUtil;
@@ -54,7 +56,7 @@ public class BackupService implements IBackupService {
 
     @Value("${gmp-backup.base-shell-path}")
     public void setShellPath(String baseShellPath) {
-        this.baseShellPath = baseShellPath.endsWith(File.separator) ? baseShellPath : baseShellPath + File.separator;
+        this.baseShellPath = baseShellPath.endsWith(File.separator) ? baseShellPath.substring(0, baseShellPath.length() - 1) : baseShellPath;
     }
 
     @Value("${gmp-backup.cronType}")
@@ -106,7 +108,7 @@ public class BackupService implements IBackupService {
      * @return
      */
     private String getShellFilename(String code) {
-        return baseShellPath + code + ".sh";
+        return baseShellPath + File.separator + code + ".sh";
     }
 
     /**
@@ -155,12 +157,12 @@ public class BackupService implements IBackupService {
                         if (filepath.contains(",")) {
                             bufferedWriter.write("sshpass -p "+ sourceServer.getPassword() +
                                     " scp -o StrictHostKeyChecking=no -P " + sourceServer.getPort() +
-                                    "-r " + sourceServer.getUsername() + "@" + address + ":" +
+                                    " -r " + sourceServer.getUsername() + "@" + address + ":" +
                                     "\\{" + filepath + "\\} backup/" + address);
                         } else {
                             bufferedWriter.write("sshpass -p "+ sourceServer.getPassword() +
                                     " scp -o StrictHostKeyChecking=no -P " + sourceServer.getPort() +
-                                    "-r " + sourceServer.getUsername() + "@" + address + ":" +
+                                    " -r " + sourceServer.getUsername() + "@" + address + ":" +
                                     filepath + " backup/" + address);
                         }
                         bufferedWriter.newLine();
@@ -201,25 +203,25 @@ public class BackupService implements IBackupService {
                                 for (String path : filepath.split(",")) {
                                     bufferedWriter.write("sshpass -p "+ password +
                                             " scp -o StrictHostKeyChecking=no -P " + port +
-                                            "-r backup-$tmpDate.tar.gz " + username + "@" + address +
+                                            " backup-$tmpDate.tar.gz " + username + "@" + address +
                                             ":" + path);
                                     bufferedWriter.newLine();
                                     bufferedWriter.write("sshpass -p "+ password +
-                                            " ssh -P " + port + " " + username + "@" + address +
+                                            " ssh -p " + port + " " + username + "@" + address +
                                             "\"find "+ path +" -mtime +" + targetServer.getSaveDayNum() +
-                                            " -name \"backup-*.tar.gz\" -exec rm -rf {} \\\"");
+                                            " -name \"backup-*.tar.gz\" -exec rm -rf {} \\;\"");
                                     bufferedWriter.newLine();
                                 }
                             } else {
                                 bufferedWriter.write("sshpass -p "+ password +
                                         " scp -o StrictHostKeyChecking=no -P " + port +
-                                        "-r backup-$tmpDate.tar.gz " + username + "@" + address +
+                                        " backup-$tmpDate.tar.gz " + username + "@" + address +
                                         ":" + filepath);
                                 bufferedWriter.newLine();
                                 bufferedWriter.write("sshpass -p "+ password +
-                                        " ssh -P " + port + " " + username + "@" + address +
-                                        "\"find "+ filepath +" -mtime +" + targetServer.getSaveDayNum() +
-                                        " -name \"backup-*.tar.gz\" -exec rm -rf {} \\\"");
+                                        " ssh -p " + port + " " + username + "@" + address +
+                                        " \"find "+ filepath +" -mtime +" + targetServer.getSaveDayNum() +
+                                        " -name \"backup-*.tar.gz\" -exec rm -rf {} \\;\"");
                                 bufferedWriter.newLine();
                             }
 
@@ -382,12 +384,22 @@ public class BackupService implements IBackupService {
                 buildShellFile(code, file);
                 RuntimeUtil.execForStr("chmod 744 " + filename);
 
-                RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
-                exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
-                        filename + "\" >> /var/spool/cron/root");
+                try {
+                    RuntimeUtil.execForStr("sed -i /" + code + ".sh/d /var/spool/cron/root");
+                } catch (IORuntimeException e) {
+                    e.printStackTrace();
+                }
+
+                File cronRootFile = new File("/var/spool/cron/root");
+                FileAppender appender = new FileAppender(cronRootFile, 16, true);
+                appender.append(backupConfig.getCronExpr() + " " + filename);
+                appender.flush();
+
+                /*exec = RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
+                        filename + "\" >> /var/spool/cron/root");*/
             } else {
                 CronUtil.remove(code);
-                CronUtil.schedule(code, backupConfig.getCronExpr(), () -> executeShell(code));
+                CronUtil.schedule(code, backupConfig.getCronExpr(), () -> nonLinuxExecuteShell(code));
                 // 支持秒级别定时任务
                 //CronUtil.setMatchSecond(true);
                 //CronUtil.start();
@@ -400,13 +412,48 @@ public class BackupService implements IBackupService {
     }
 
     @Override
+    public void onlyBuildCron(String code) {
+        BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
+        if (null != backupConfig){
+            if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+                String filename = getShellFilename(code);
+                File file = new File(filename);
+                buildShellFile(code, file);
+                RuntimeUtil.execForStr("chmod 744 " + filename);
+                if (BackupConstant.BACKUP_OPEN.equals(backupConfig.getEnable())) {
+                    try {
+                        RuntimeUtil.execForStr("sed -i /" + code + ".sh/d /var/spool/cron/root");
+                    } catch (IORuntimeException e) {
+                        e.printStackTrace();
+                    }
+
+                    File cronRootFile = new File("/var/spool/cron/root");
+                    FileAppender appender = new FileAppender(cronRootFile, 16, true);
+                    appender.append(backupConfig.getCronExpr() + " " + filename);
+                    appender.flush();
+                }
+            } else {
+                if (BackupConstant.BACKUP_OPEN.equals(backupConfig.getEnable())) {
+                    CronUtil.remove(code);
+                    CronUtil.schedule(code, backupConfig.getCronExpr(), () -> nonLinuxExecuteShell(code));
+                }
+            }
+        }
+    }
+
+    @Override
     public Result<String> removeCron(String code) {
         BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
+        String resultMsg = code;
         if (null != backupConfig) {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 /*throw new BackupException(100004, "配置类型不正确，不能删除Linux系统定时任务", code);*/
-                String filename = getShellFilename(code);
-                code = RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
+                //String filename = getShellFilename(code);
+                try {
+                    resultMsg = RuntimeUtil.execForStr("sed -i /" + code + ".sh/d /var/spool/cron/root");
+                } catch (IORuntimeException e) {
+                    e.printStackTrace();
+                }
             } else {
                 CronUtil.remove(code);
             }
@@ -414,7 +461,23 @@ public class BackupService implements IBackupService {
                 backupConfigMapper.modifyBackupConfigEnable(code, BackupConstant.BACKUP_CLOSE);
             }
         }
-        return new Result<>(code);
+        return new Result<>(resultMsg);
+    }
+
+    @Override
+    public void removeCronAndDeleteFile(BackupConfig backupConfig) {
+        String code = backupConfig.getCode();
+        if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
+            try {
+                RuntimeUtil.execForStr("sed -i /" + code + ".sh/d /var/spool/cron/root");
+            } catch (IORuntimeException e) {
+                e.printStackTrace();
+            }
+            String filename = getShellFilename(code);
+            FileUtil.del(filename);
+        } else {
+            CronUtil.remove(code);
+        }
     }
 
     /**
@@ -431,11 +494,19 @@ public class BackupService implements IBackupService {
         List<BackupConfig> backupConfigs = backupConfigMapper.queryEnable(BackupConstant.BACKUP_OPEN);
         if (!CollectionUtils.isEmpty(backupConfigs)) {
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
-                for (BackupConfig backupConfig : backupConfigs) {
-                    String filename = getShellFilename(backupConfig.getCode());
-                    RuntimeUtil.execForStr("sed i \"/" + filename + "/d\" /var/spool/cron/root");
-                    RuntimeUtil.execForStr("echo \"" + backupConfig.getCronExpr() + " " +
-                            filename + "\" >> /var/spool/cron/root");
+                if (!CollectionUtils.isEmpty(backupConfigs)) {
+                    File file = new File("/var/spool/cron/root");
+                    FileAppender appender = new FileAppender(file, 16, true);
+                    for (BackupConfig backupConfig : backupConfigs) {
+                        String filename = getShellFilename(backupConfig.getCode());
+                        try {
+                            RuntimeUtil.execForStr("sed -i /" + backupConfig.getCode() + ".sh/d /var/spool/cron/root");
+                        } catch (IORuntimeException e) {
+                            e.printStackTrace();
+                        }
+                        appender.append(backupConfig.getCronExpr() + " " + filename);
+                    }
+                    appender.flush();
                 }
             } else {
                 for (BackupConfig backupConfig : backupConfigs) {
@@ -541,16 +612,17 @@ public class BackupService implements IBackupService {
                     recoverDir = recoverDir + File.separator;
                 }
                 try {
-                    RuntimeUtil.execForStr("cd " + baseShellPath, "mkdir recoverTemporary",
-                            "sshpass -p " + serverConfig.getPassword() +
+                    //RuntimeUtil.execForStr("cd " + baseShellPath);
+                    RuntimeUtil.execForStr("mkdir " + baseShellPath + "/recoverTemporary");
+                    RuntimeUtil.execForStr("sshpass -p " + serverConfig.getPassword() +
                             " scp -o StrictHostKeyChecking=no -P " + serverConfig.getPort() +
-                            "-r backup-$tmpDate.tar.gz " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
+                            " -r " + serverConfig.getUsername() + "@" + serverConfig.getAddress() +
                             ":" + recoverDir + filename + " " + baseShellPath + "/recoverTemporary");
                     FileReader fileReader = new FileReader(baseShellPath + "/recoverTemporary/" + filename);
                     return fileReader.getInputStream();
                 } finally {
                     //执行结束删掉中间的目录
-                    RuntimeUtil.execForStr("rm -rf recoverTemporary");
+                    RuntimeUtil.execForStr("rm -rf " + baseShellPath + "/recoverTemporary");
                 }
             } else {
                 if (!recoverDir.endsWith("/")) {
@@ -696,7 +768,7 @@ public class BackupService implements IBackupService {
         }
 
         try (InputStream inputStream = file.getInputStream()){
-            String name = file.getName();
+            String name = file.getOriginalFilename();
 
             if (BackupConstant.DEFAULT_CORN_EXPR_TYPE.equals(cronType)) {
                 if (BackupConstant.CONNECT_LOCAL_TYPE_VAR.equals(serverConfig.getConnectType())) {

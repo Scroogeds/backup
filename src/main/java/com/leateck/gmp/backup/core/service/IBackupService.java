@@ -1,6 +1,7 @@
 package com.leateck.gmp.backup.core.service;
 
 import com.leateck.gmp.backup.base.entity.Result;
+import com.leateck.gmp.backup.core.entity.BackupConfig;
 import com.leateck.gmp.backup.core.vo.RecoverConfig;
 import com.leateck.gmp.backup.core.vo.RecoverConfigVo;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +28,11 @@ public interface IBackupService {
 
     Result<String> buildCron(String code);
 
+    void onlyBuildCron(String code);
+
     Result<String> removeCron(String code);
+
+    void removeCronAndDeleteFile(BackupConfig backupConfig);
 
     void initEnableCron();
 

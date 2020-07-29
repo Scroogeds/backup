@@ -118,7 +118,7 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
         //backupConfig.setCronType(cronType);
         if (backupConfigMapper.insertBackupConfig(backupConfig) > 0) {
             backupServerService.addBackupServer(code, sourceServers, targetServers);
-            backupService.buildCron(code);
+            new Thread(() -> backupService.buildCron(code)).start();
         }
         return new Result<>(backupConfigVo);
     }
@@ -137,17 +137,21 @@ public class BackupConfigService extends BaseService<BackupConfigMapper, BackupC
             String code = backupConfig.getCode();
             backupServerService.deleteByConfigCode(code);
             backupServerService.addBackupServer(code, sourceServers, targetServers);
-            backupService.buildCron(code);
+            new Thread(() -> backupService.onlyBuildCron(code)).start();
         }
         return new Result<>(backupConfigVo);
     }
 
     @Override
     public Result<String> deleteByCode(String code) {
-        if (backupConfigMapper.deleteByCode(code) > 0) {
-            backupServerService.deleteByConfigCode(code);
-            backupService.removeCron(code);
+        BackupConfig backupConfig = backupConfigMapper.queryByCode(code);
+        if (null != backupConfig) {
+            if (backupConfigMapper.deleteByCode(code) > 0) {
+                backupServerService.deleteByConfigCode(code);
+                backupService.removeCronAndDeleteFile(backupConfig);
+            }
         }
         return new Result<>(code);
     }
 }
+
