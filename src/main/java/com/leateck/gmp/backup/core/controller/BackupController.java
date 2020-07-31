@@ -1,12 +1,14 @@
 package com.leateck.gmp.backup.core.controller;
 
 import cn.hutool.core.util.RuntimeUtil;
+import cn.hutool.json.JSONUtil;
 import com.leateck.gmp.backup.base.entity.Result;
 import com.leateck.gmp.backup.constant.BackupConstant;
 import com.leateck.gmp.backup.core.service.IBackupService;
 import com.leateck.gmp.backup.core.vo.RecoverConfig;
 import com.leateck.gmp.backup.core.vo.RecoverConfigVo;
 import com.leateck.gmp.backup.utils.IoUtils;
+import com.leateck.gmp.backup.utils.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -79,24 +81,11 @@ public class BackupController {
     public void downFile(HttpServletResponse response,
                                    HttpServletRequest request,
                                    @RequestParam("filename") String filename) {
-        RecoverConfig recoverConfig = new RecoverConfig();
-        String serverCode = request.getParameter("serverCode");
-        String recoverDir = request.getParameter("recoverDir");
-        String connectType = request.getParameter("connectType");
-        String address = request.getParameter("address");
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        String port = request.getParameter("port");
 
-        port = StringUtils.isEmpty(port) ? BackupConstant.DEFAULT_SORT : port;
-
-        recoverConfig.setAddress(address);
-        recoverConfig.setServerCode(serverCode);
-        recoverConfig.setRecoverDir(recoverDir);
-        recoverConfig.setConnectType(connectType);
-        recoverConfig.setUsername(username);
-        recoverConfig.setPassword(password);
-        recoverConfig.setPort(port);
+        RecoverConfig recoverConfig = JSONUtil.toBean(StringUtil.getParamMap(request), RecoverConfig.class);
+        if (StringUtils.isEmpty(recoverConfig.getPort())) {
+            recoverConfig.setPort(BackupConstant.DEFAULT_SORT);
+        }
 
         IoUtils.exportStream(response, filename, backupService.downFile(recoverConfig, filename));
     }
@@ -110,24 +99,11 @@ public class BackupController {
     @PostMapping("upload/file")
     public Result<String> downFile(@RequestParam("file") MultipartFile file,
                                    HttpServletRequest request) {
-        RecoverConfig recoverConfig = new RecoverConfig();
-        String serverCode = request.getParameter("serverCode");
-        String recoverDir = request.getParameter("recoverDir");
-        String connectType = request.getParameter("connectType");
-        String address = request.getParameter("address");
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        String port = request.getParameter("port");
+        RecoverConfig recoverConfig = JSONUtil.toBean(StringUtil.getParamMap(request), RecoverConfig.class);
+        if (StringUtils.isEmpty(recoverConfig.getPort())) {
+            recoverConfig.setPort(BackupConstant.DEFAULT_SORT);
+        }
 
-        port = StringUtils.isEmpty(port) ? BackupConstant.DEFAULT_SORT : port;
-
-        recoverConfig.setAddress(address);
-        recoverConfig.setServerCode(serverCode);
-        recoverConfig.setRecoverDir(recoverDir);
-        recoverConfig.setConnectType(connectType);
-        recoverConfig.setUsername(username);
-        recoverConfig.setPassword(password);
-        recoverConfig.setPort(port);
         return backupService.uploadFile(file, recoverConfig);
     }
 

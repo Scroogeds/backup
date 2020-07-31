@@ -1,5 +1,12 @@
 package com.leateck.gmp.backup.utils;
 
+import cn.hutool.json.JSONObject;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * <p>Title: StringUtil</p>
  * <p>Description: </p>
@@ -135,4 +142,29 @@ public class StringUtil {
     public static String getId(String sign) {
         return sign + System.currentTimeMillis();
     }
+
+    /**
+     * 将request请求表单的数组转化成字符串和数组
+     * @param request
+     * @return
+     */
+    public static Map<String, Object> getServletRequestParamMap(HttpServletRequest request){
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        Map<String, Object> paramMap = new HashMap<>();
+        Iterator<Map.Entry<String, String[]>> entries = parameterMap.entrySet().iterator();
+        while(entries.hasNext()){
+            Map.Entry<String, String[]> entry = entries.next();
+            if(entry.getValue().length > 1){
+                paramMap.put(entry.getKey(), entry.getValue());
+            } else if(entry.getValue().length > 0) {
+                paramMap.put(entry.getKey(), entry.getValue()[0]);
+            }
+        }
+        return paramMap;
+    }
+
+    public static JSONObject getParamMap(HttpServletRequest request){
+        return new JSONObject(getServletRequestParamMap(request));
+    }
+
 }

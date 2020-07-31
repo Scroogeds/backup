@@ -83,6 +83,12 @@
 
         <dependency>
             <groupId>cn.hutool</groupId>
+            <artifactId>hutool-json</artifactId>
+            <version>5.3.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
             <artifactId>hutool-cron</artifactId>
             <version>5.3.8</version>
         </dependency>
